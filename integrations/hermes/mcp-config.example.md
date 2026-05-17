@@ -1,18 +1,21 @@
 # Hermes MCP config example
 
-Register local stdio MCP server:
+Register local stdio MCP server (with runtime env vars):
 
 ```bash
-hermes mcp add arca-siradig --command python3 --args /opt/data/vaults/personal/Projects/arca-siradig/mcp/server.py
+hermes mcp add arca-siradig \
+  --command python3 \
+  --args /opt/data/vaults/personal/Projects/arca-siradig/mcp/server.py \
+  --env ARCA_CUIT=... ARCA_PASSWORD=...
+
 hermes mcp list
 hermes mcp test arca-siradig
 ```
 
-Then load the Hermes adapter skill:
+Then install/load the Hermes adapter skill:
 
 ```bash
-mkdir -p ~/.hermes/skills/arca-siradig
-cp /opt/data/vaults/personal/Projects/arca-siradig/integrations/hermes/skills/arca-siradig.SKILL.md ~/.hermes/skills/arca-siradig/SKILL.md
+hermes skills install https://raw.githubusercontent.com/<your-org-or-user>/arca-siradig/main/integrations/hermes/skills/arca-siradig.SKILL.md
 ```
 
 In a fresh Hermes session:
@@ -20,7 +23,5 @@ In a fresh Hermes session:
 - `/reload-skills`
 - `/skill arca-siradig`
 
-Required env vars in `~/.hermes/.env`:
-- `ARCA_CUIT`
-- `ARCA_PASSWORD`
-- `ARCA_SIRADIG_USER_FULLNAME`
+Optional env var:
+- `ARCA_SIRADIG_USER_FULLNAME` (used as default when `siradig_select_taxpayer` is called without `full_name`)

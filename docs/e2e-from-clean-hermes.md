@@ -6,14 +6,16 @@ Validate that a fresh Hermes instance can install/use the ARCA SiRADIG MCP + ski
 ## Checklist
 1. Fresh Hermes install works (`hermes doctor`).
 2. Repo cloned locally.
-3. Env vars set in `~/.hermes/.env`:
+3. MCP registered with required env vars:
    - ARCA_CUIT
    - ARCA_PASSWORD
-   - ARCA_SIRADIG_USER_FULLNAME
-4. MCP registered and visible.
-5. Skill installed locally and loadable.
-6. MCP healthcheck returns ready=true.
-7. (Next milestone) real SiRADIG tools run successfully.
+4. MCP visible and testable.
+5. Skill installed and loadable.
+6. `siradig_healthcheck` returns `ready=true`.
+7. Real flow works:
+   - `siradig_login`
+   - `siradig_select_taxpayer` (by argument `full_name` or optional env fallback)
+   - `siradig_get_personal_data`
 
 ## Commands
 
@@ -23,28 +25,40 @@ cd /tmp
 git clone <YOUR_GITHUB_URL> arca-siradig
 cd arca-siradig
 
-# 2) Register MCP
-hermes mcp add arca-siradig --command python3 --args /tmp/arca-siradig/mcp/server.py
+# 2) Install runtime
+python3 -m venv .venv
+source .venv/bin/activate
+bash scripts/setup_playwright.sh
+
+# 3) Register MCP with env vars
+hermes mcp add arca-siradig \
+  --command /tmp/arca-siradig/.venv/bin/python \
+  --args /tmp/arca-siradig/mcp/server.py \
+  --env ARCA_CUIT=... ARCA_PASSWORD=...
+
 hermes mcp test arca-siradig
 
-# 3) Install skill
-mkdir -p ~/.hermes/skills/arca-siradig
-cp integrations/hermes/skills/arca-siradig.SKILL.md ~/.hermes/skills/arca-siradig/SKILL.md
+# 4) Install skill
+hermes skills install https://raw.githubusercontent.com/<YOUR_GITHUB_USER_OR_ORG>/arca-siradig/main/integrations/hermes/skills/arca-siradig.SKILL.md
 
-# 4) Start Hermes and load
+# 5) Start Hermes and load
 hermes
 # /reload-mcp
 # /reload-skills
 # /skill arca-siradig
 ```
 
-## Expected current result (v0.2)
+## Expected current result (v0.3)
 - `siradig_healthcheck`: implemented and validates env vars.
-- Other `siradig_*` tools: declared but return `not_implemented` until next iteration.
+- `siradig_login`: implemented with Playwright.
+- `siradig_select_taxpayer`: implemented with `full_name` input (optional env fallback).
+- `siradig_get_personal_data`: implemented (`usuario`, `representando_a`, `dependencia`).
+- `siradig_list_forms`: not implemented.
+- `siradig_open_form_pdf`: not implemented.
 
 ## Publish prep
 Before public release:
 - Add LICENSE
 - Add CONTRIBUTING.md
 - Add release tags/changelog
-- Implement real SiRADIG tools and mark v1.0
+- Implement remaining SiRADIG tools and mark v1.0

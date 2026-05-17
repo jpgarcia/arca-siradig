@@ -4,10 +4,12 @@ Use stdio transport pointing to:
 - command: `python3`
 - args: `/opt/data/vaults/personal/Projects/arca-siradig/mcp/server.py`
 
-Expose env vars to runtime:
+Expose required env vars to runtime:
 - `ARCA_CUIT`
 - `ARCA_PASSWORD`
-- `ARCA_SIRADIG_USER_FULLNAME`
+
+Optional env var:
+- `ARCA_SIRADIG_USER_FULLNAME` (fallback when `full_name` is omitted in `siradig_select_taxpayer`)
 
 After registration, validate by calling:
 - `tools/list`

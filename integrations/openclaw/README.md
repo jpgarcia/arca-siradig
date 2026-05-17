@@ -8,10 +8,11 @@ This folder documents how to consume the portable `mcp/server.py` from OpenClaw.
 
 ## Expected usage
 1. Register the MCP server command in OpenClaw config.
-2. Ensure env vars are available in runtime:
+2. Ensure required env vars are available in runtime:
    - ARCA_CUIT
    - ARCA_PASSWORD
-   - ARCA_SIRADIG_USER_FULLNAME
+   Optional fallback:
+   - ARCA_SIRADIG_USER_FULLNAME (if `full_name` is not passed to `siradig_select_taxpayer`)
 3. Call MCP tools:
    - siradig_login
    - siradig_select_taxpayer

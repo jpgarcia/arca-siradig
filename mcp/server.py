@@ -27,7 +27,6 @@ from typing import Any, Dict, List, Optional
 REQUIRED_ENV = [
     "ARCA_CUIT",
     "ARCA_PASSWORD",
-    "ARCA_SIRADIG_USER_FULLNAME",
 ]
 
 AFIP_LOGIN_URL = "https://auth.afip.gob.ar/contribuyente_/login.xhtml"

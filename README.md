@@ -26,9 +26,9 @@ Planned next tools:
 ## Required environment variables
 - `ARCA_CUIT`
 - `ARCA_PASSWORD`
-- `ARCA_SIRADIG_USER_FULLNAME`
 
 Optional:
+- `ARCA_SIRADIG_USER_FULLNAME` (only used as default for taxpayer selection)
 - `ARCA_PLAYWRIGHT_HEADLESS` (`true` by default)
 
 ## Local setup (repo)
@@ -50,9 +50,13 @@ source .venv/bin/activate
 bash scripts/setup_playwright.sh
 ```
 
-2) Register MCP in Hermes
+2) Register MCP in Hermes (including env vars for stdio server)
 ```bash
-hermes mcp add arca-siradig --command "$(pwd)/.venv/bin/python $(pwd)/mcp/server.py"
+hermes mcp add arca-siradig \
+  --command "$(pwd)/.venv/bin/python" \
+  --args "$(pwd)/mcp/server.py" \
+  --env ARCA_CUIT=... ARCA_PASSWORD=...
+
 hermes mcp test arca-siradig
 ```
 
@@ -61,12 +65,12 @@ hermes mcp test arca-siradig
 hermes skills install https://raw.githubusercontent.com/<your-org-or-user>/arca-siradig/main/integrations/hermes/skills/arca-siradig.SKILL.md
 ```
 
-4) Set ARCA credentials in Hermes env
+4) Taxpayer full name handling
+- You can pass it explicitly in `siradig_select_taxpayer(full_name=...)`.
+- Or define optional fallback env var in Hermes config/env:
 ```bash
 hermes config env-path
-# edit the shown file and add:
-# ARCA_CUIT=...
-# ARCA_PASSWORD=...
+# add optionally:
 # ARCA_SIRADIG_USER_FULLNAME=...
 ```
 
