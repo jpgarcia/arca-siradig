@@ -327,9 +327,9 @@ def _open_siradig_service(page, timeout_ms: int) -> bool:
     return _click_first(page, tile_selectors, timeout_ms)
 
 
-def _ensure_siradig_menu(page, timeout_ms: int) -> None:
+def _ensure_siradig_menu(page, timeout_ms: int) -> bool:
     if "menu_sel_empresa.jsp" in page.url:
-        return
+        return True
 
     try:
         page.goto(SIRADIG_MENU_URL, wait_until="domcontentloaded", timeout=timeout_ms)
@@ -337,12 +337,14 @@ def _ensure_siradig_menu(page, timeout_ms: int) -> None:
         pass
 
     if "menu_sel_empresa.jsp" in page.url:
-        return
+        return True
 
     _open_siradig_service(page, timeout_ms)
     page.wait_for_load_state("domcontentloaded", timeout=timeout_ms)
     if "menu_sel_empresa.jsp" not in page.url:
         page.goto(SIRADIG_MENU_URL, wait_until="domcontentloaded", timeout=timeout_ms)
+
+    return "menu_sel_empresa.jsp" in page.url
 
 
 def siradig_login(arguments: Dict[str, Any]) -> Dict[str, Any]:
@@ -363,8 +365,8 @@ def siradig_login(arguments: Dict[str, Any]) -> Dict[str, Any]:
 
         # Reuse persisted session when still valid.
         try:
-            _ensure_siradig_menu(page, timeout_ms)
-            if _is_logged_in_page(page):
+            menu_ready = _ensure_siradig_menu(page, timeout_ms)
+            if menu_ready and _is_logged_in_page(page):
                 taxpayers = _list_visible_taxpayers(page)
                 return ok(
                     {
@@ -442,8 +444,22 @@ def siradig_login(arguments: Dict[str, Any]) -> Dict[str, Any]:
             return fail("selector_not_found", "Could not find Ingresar/submit button for password step")
 
         page.wait_for_load_state("networkidle", timeout=timeout_ms)
-        _ensure_siradig_menu(page, timeout_ms)
+        menu_ready = _ensure_siradig_menu(page, timeout_ms)
+        if not menu_ready or not _is_logged_in_page(page):
+            return fail(
+                "login_incomplete",
+                "Login finished but SiRADIG menu was not reachable/verified",
+                {"current_url": page.url},
+            )
+
         taxpayers = _list_visible_taxpayers(page)
+        if not taxpayers:
+            return fail(
+                "login_without_taxpayers",
+                "Login succeeded but no selectable taxpayers were detected",
+                {"current_url": page.url},
+            )
+
         _save_storage_state()
 
         return ok(
@@ -468,7 +484,14 @@ def siradig_list_taxpayers(_: Dict[str, Any]) -> Dict[str, Any]:
         return fail("session_not_ready", "No active browser session. Call siradig_login first")
 
     try:
-        _ensure_siradig_menu(page, 30000)
+        menu_ready = _ensure_siradig_menu(page, 30000)
+        if not menu_ready or not _is_logged_in_page(page):
+            return fail(
+                "session_not_logged_in",
+                "Session is not currently on a valid SiRADIG logged-in menu",
+                {"current_url": page.url},
+            )
+
         taxpayers = _list_visible_taxpayers(page)
         if not taxpayers:
             return fail(
