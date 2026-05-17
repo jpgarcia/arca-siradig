@@ -34,10 +34,13 @@ source .venv/bin/activate
 bash scripts/setup_playwright.sh
 
 # 3) Register MCP with env vars
+read -r -p "ARCA_CUIT: " ARCA_CUIT
+read -r -s -p "ARCA_PASSWORD: " ARCA_PASSWORD; echo
+
 hermes mcp add arca-siradig \
   --command /tmp/arca-siradig/.venv/bin/python \
   --args /tmp/arca-siradig/mcp/server.py \
-  --env ARCA_CUIT=... ARCA_PASSWORD=...
+  --env ARCA_CUIT="$ARCA_CUIT" ARCA_PASSWORD="$ARCA_PASSWORD"
 
 hermes mcp test arca-siradig
 
@@ -69,3 +72,7 @@ Before public release:
 - Add CONTRIBUTING.md
 - Add release tags/changelog
 - Implement remaining SiRADIG tools and mark v1.0
+
+## Secret handling rule
+
+- Never print credential env vars in terminal output/logs (`print(os.getenv(...))`, `echo $ARCA_PASSWORD`, etc.).

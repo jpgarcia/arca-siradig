@@ -65,10 +65,14 @@ bash scripts/setup_playwright.sh
 2. Register MCP in Hermes (including env vars for stdio server)
 
 ```bash
+# Read secrets without echoing them
+read -r -p "ARCA_CUIT: " ARCA_CUIT
+read -r -s -p "ARCA_PASSWORD: " ARCA_PASSWORD; echo
+
 hermes mcp add arca-siradig \
   --command "$(pwd)/.venv/bin/python" \
   --args "$(pwd)/mcp/server.py" \
-  --env ARCA_CUIT=... ARCA_PASSWORD=...
+  --env ARCA_CUIT="$ARCA_CUIT" ARCA_PASSWORD="$ARCA_PASSWORD"
 
 hermes mcp test arca-siradig
 ```
@@ -115,6 +119,7 @@ Expected result:
 
 - Never hardcode ARCA credentials in repo files.
 - Keep secrets in Hermes `.env` only.
+- Never print credential env vars in terminal output/logs (avoid `print(os.getenv(...))`, `echo $ARCA_PASSWORD`, etc.).
 
 ## Troubleshooting
 

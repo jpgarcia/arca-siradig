@@ -10,10 +10,13 @@ cd arca-siradig
 ```
 
 ```bash
+read -r -p "ARCA_CUIT: " ARCA_CUIT
+read -r -s -p "ARCA_PASSWORD: " ARCA_PASSWORD; echo
+
 hermes mcp add arca-siradig \
   --command python3 \
   --args <repo-path>/mcp/server.py \
-  --env ARCA_CUIT=... ARCA_PASSWORD=...
+  --env ARCA_CUIT="$ARCA_CUIT" ARCA_PASSWORD="$ARCA_PASSWORD"
 
 hermes mcp list
 hermes mcp test arca-siradig
