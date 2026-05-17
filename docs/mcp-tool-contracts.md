@@ -30,6 +30,17 @@ Output data:
 - taxpayers (array)
 - current_url
 
+## siradig_session_status
+Input: {}
+Behavior:
+- Reuses/opens browser context and checks whether session appears logged in
+- Reports persisted Playwright storage-state metadata
+Output data:
+- logged_in (bool)
+- current_url
+- available_taxpayers (when logged in)
+- session (persisted-state metadata)
+
 ## siradig_select_taxpayer
 Input:
 - full_name (optional; defaults ARCA_SIRADIG_USER_FULLNAME)

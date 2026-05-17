@@ -20,6 +20,7 @@ Implemented MCP tools:
 
 - `siradig_healthcheck`
 - `siradig_login` (Playwright + portal-to-SiRADIG handoff)
+- `siradig_session_status`
 - `siradig_list_taxpayers`
 - `siradig_select_taxpayer` (Playwright)
 - `siradig_get_personal_data` (header extraction)

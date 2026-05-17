@@ -2,12 +2,13 @@
 """
 ARCA SiRADIG MCP server (portable-first, stdio JSON lines).
 
-v0.5:
+v0.6:
 - MCP-style methods: initialize, tools/list, tools/call
 - Functional browser tools using Playwright:
   - siradig_healthcheck
   - siradig_login
   - siradig_list_taxpayers
+  - siradig_session_status
   - siradig_select_taxpayer
   - siradig_get_personal_data
 - Placeholder tools kept for next iterations:
@@ -57,6 +58,11 @@ TOOLS: List[Dict[str, Any]] = [
     {
         "name": "siradig_list_taxpayers",
         "description": "List selectable taxpayer entries currently visible in menu_sel_empresa.jsp.",
+        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+    },
+    {
+        "name": "siradig_session_status",
+        "description": "Check whether ARCA/SiRADIG session is currently active and report persisted-state metadata.",
         "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
     },
     {
@@ -129,7 +135,7 @@ def check_env() -> Dict[str, Any]:
             "ready": True,
             "checked_at": _utc_now(),
             "required_env": REQUIRED_ENV,
-            "server_version": "0.5.0",
+            "server_version": "0.6.0",
         }
     )
 
@@ -475,6 +481,32 @@ def siradig_list_taxpayers(_: Dict[str, Any]) -> Dict[str, Any]:
         return fail("list_taxpayers_failed", "Failed listing taxpayers", {"exception": str(e)})
 
 
+def siradig_session_status(arguments: Dict[str, Any]) -> Dict[str, Any]:
+    headless = arguments.get("headless")
+    if not isinstance(headless, bool):
+        headless = _bool_from_env("ARCA_PLAYWRIGHT_HEADLESS", True)
+
+    try:
+        page = _ensure_page(headless=headless)
+        _ensure_siradig_menu(page, 20000)
+        logged_in = _is_logged_in_page(page)
+        taxpayers = _list_visible_taxpayers(page) if logged_in else []
+        return ok(
+            {
+                "logged_in": logged_in,
+                "current_url": page.url,
+                "available_taxpayers": taxpayers,
+                "session": _session_state_info(),
+            }
+        )
+    except Exception as e:
+        return fail(
+            "session_status_failed",
+            "Failed checking ARCA/SiRADIG session status",
+            {"exception": str(e), "session": _session_state_info()},
+        )
+
+
 def siradig_select_taxpayer(arguments: Dict[str, Any]) -> Dict[str, Any]:
     full_name = (arguments.get("full_name") or os.getenv("ARCA_SIRADIG_USER_FULLNAME", "")).strip()
     if not full_name:
@@ -571,6 +603,8 @@ def handle_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         return siradig_login(arguments)
     if name == "siradig_list_taxpayers":
         return siradig_list_taxpayers(arguments)
+    if name == "siradig_session_status":
+        return siradig_session_status(arguments)
     if name == "siradig_select_taxpayer":
         return siradig_select_taxpayer(arguments)
     if name == "siradig_get_personal_data":
@@ -596,7 +630,7 @@ def mcp_initialize(req_id: Any) -> Dict[str, Any]:
         req_id,
         result={
             "protocolVersion": "2024-11-05",
-            "serverInfo": {"name": "arca-siradig", "version": "0.5.0"},
+            "serverInfo": {"name": "arca-siradig", "version": "0.6.0"},
             "capabilities": {"tools": {}},
         },
     )

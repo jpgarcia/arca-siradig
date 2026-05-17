@@ -49,6 +49,7 @@ Notes:
 - `siradig_healthcheck`
 - `siradig_login`
 - `siradig_list_taxpayers`
+- `siradig_session_status`
 - `siradig_select_taxpayer`
 - `siradig_get_personal_data`
 - `siradig_list_forms`
