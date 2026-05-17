@@ -120,6 +120,7 @@ Expected result:
 - Never hardcode ARCA credentials in repo files.
 - Keep secrets in Hermes `.env` only.
 - Never print credential env vars in terminal output/logs (avoid `print(os.getenv(...))`, `echo $ARCA_PASSWORD`, etc.).
+- Do not use generic browser typing commands for ARCA credentials during assisted runs; those commands can appear verbatim in tool traces. Use the MCP tool `siradig_login` instead.
 
 ## Troubleshooting
 

@@ -84,3 +84,4 @@ Notes:
 - If session appears expired, restart from `siradig_login`.
 - If selector matching fails for taxpayer, use exact `ARCA_SIRADIG_USER_FULLNAME` string.
 - Handle ARCA_CUIT/ARCA_PASSWORD as sensitive inputs. Collect them with silent prompts and avoid echoing values in terminal examples.
+- Never perform ARCA credential entry with generic browser typing tools; use `siradig_login` so credentials stay inside MCP runtime/env handling instead of chat tool traces.
