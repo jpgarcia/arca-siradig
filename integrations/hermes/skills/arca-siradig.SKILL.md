@@ -64,7 +64,8 @@ Notes:
 - If `siradig_select_taxpayer` returns `taxpayer_not_found`, retry using one of the exact names from `siradig_list_taxpayers`.
 - If selection fails due to session/login instability, perform at most ONE automatic recovery retry:
   - `siradig_login` -> `siradig_list_taxpayers` -> `siradig_select_taxpayer`.
-- Do not retry more than once automatically. If it fails again, stop and ask the user how to proceed.
+- Do not retry more than once automatically. If it fails again, stop and ask the user how to proceed with this standard prompt:
+  - "Falló nuevamente después de 1 reintento automático. ¿Cómo querés seguir?\n1) Reintentar manualmente login+selección\n2) Elegir otro contribuyente de la lista\n3) Cancelar por ahora"
 
 2. List submitted forms (visible period)
 
