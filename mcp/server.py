@@ -2,7 +2,7 @@
 """
 ARCA SiRADIG MCP server (portable-first, stdio JSON lines).
 
-v0.4:
+v0.5:
 - MCP-style methods: initialize, tools/list, tools/call
 - Functional browser tools using Playwright:
   - siradig_healthcheck
@@ -23,6 +23,7 @@ import os
 import re
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 REQUIRED_ENV = [
@@ -32,6 +33,8 @@ REQUIRED_ENV = [
 
 AFIP_LOGIN_URL = "https://auth.afip.gob.ar/contribuyente_/login.xhtml"
 SIRADIG_MENU_URL = "https://serviciosjava2.afip.gob.ar/radig/jsp/menu_sel_empresa.jsp"
+SESSION_DIR = Path(__file__).resolve().parent / ".session"
+SESSION_STATE_PATH = SESSION_DIR / "storage_state.json"
 
 TOOLS: List[Dict[str, Any]] = [
     {
@@ -126,7 +129,7 @@ def check_env() -> Dict[str, Any]:
             "ready": True,
             "checked_at": _utc_now(),
             "required_env": REQUIRED_ENV,
-            "server_version": "0.4.0",
+            "server_version": "0.5.0",
         }
     )
 
@@ -172,6 +175,43 @@ def _close_browser_state() -> None:
 atexit.register(_close_browser_state)
 
 
+def _load_storage_state_path() -> Optional[str]:
+    if SESSION_STATE_PATH.exists() and SESSION_STATE_PATH.is_file():
+        return str(SESSION_STATE_PATH)
+    return None
+
+
+def _save_storage_state() -> None:
+    context = _BROWSER_STATE.get("context")
+    if context is None:
+        return
+    SESSION_DIR.mkdir(parents=True, exist_ok=True)
+    context.storage_state(path=str(SESSION_STATE_PATH))
+
+
+def _session_state_info() -> Dict[str, Any]:
+    if not SESSION_STATE_PATH.exists():
+        return {"persisted": False}
+    stat = SESSION_STATE_PATH.stat()
+    return {
+        "persisted": True,
+        "storage_state_path": str(SESSION_STATE_PATH),
+        "updated_at": datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc).isoformat(),
+    }
+
+
+def _is_logged_in_page(page) -> bool:
+    try:
+        text = (page.locator("body").inner_text(timeout=5000) or "").lower()
+    except Exception:
+        text = ""
+    if "usuario no logueado" in text:
+        return False
+    if "menu_sel_empresa.jsp" in page.url or "determinarcontribuyente.do" in page.url.lower():
+        return True
+    return "usuario" in text and "dependencia" in text
+
+
 def _ensure_page(headless: bool):
     if (
         _BROWSER_STATE["page"] is not None
@@ -190,7 +230,11 @@ def _ensure_page(headless: bool):
 
     pw = sync_playwright().start()
     browser = pw.chromium.launch(headless=headless)
-    context = browser.new_context()
+    storage_state_path = _load_storage_state_path()
+    if storage_state_path:
+        context = browser.new_context(storage_state=storage_state_path)
+    else:
+        context = browser.new_context()
     page = context.new_page()
 
     _BROWSER_STATE["playwright"] = pw
@@ -310,6 +354,27 @@ def siradig_login(arguments: Dict[str, Any]) -> Dict[str, Any]:
 
     try:
         page = _ensure_page(headless=headless)
+
+        # Reuse persisted session when still valid.
+        try:
+            _ensure_siradig_menu(page, timeout_ms)
+            if _is_logged_in_page(page):
+                taxpayers = _list_visible_taxpayers(page)
+                return ok(
+                    {
+                        "logged_in": True,
+                        "reused_session": True,
+                        "headless": headless,
+                        "current_url": page.url,
+                        "title": page.title(),
+                        "menu_expected": "menu_sel_empresa.jsp",
+                        "available_taxpayers": taxpayers,
+                        "session": _session_state_info(),
+                    }
+                )
+        except Exception:
+            pass
+
         page.goto(AFIP_LOGIN_URL, wait_until="domcontentloaded", timeout=timeout_ms)
 
         cuit_ok = _fill_first(
@@ -373,15 +438,18 @@ def siradig_login(arguments: Dict[str, Any]) -> Dict[str, Any]:
         page.wait_for_load_state("networkidle", timeout=timeout_ms)
         _ensure_siradig_menu(page, timeout_ms)
         taxpayers = _list_visible_taxpayers(page)
+        _save_storage_state()
 
         return ok(
             {
                 "logged_in": True,
+                "reused_session": False,
                 "headless": headless,
                 "current_url": page.url,
                 "title": page.title(),
                 "menu_expected": "menu_sel_empresa.jsp",
                 "available_taxpayers": taxpayers,
+                "session": _session_state_info(),
             }
         )
     except Exception as e:
@@ -528,7 +596,7 @@ def mcp_initialize(req_id: Any) -> Dict[str, Any]:
         req_id,
         result={
             "protocolVersion": "2024-11-05",
-            "serverInfo": {"name": "arca-siradig", "version": "0.4.0"},
+            "serverInfo": {"name": "arca-siradig", "version": "0.5.0"},
             "capabilities": {"tools": {}},
         },
     )

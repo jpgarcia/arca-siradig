@@ -120,3 +120,4 @@ Expected result:
 - `Playwright is not available`: run `bash scripts/setup_playwright.sh`.
 - Browser dependency errors: run `python3 -m playwright install chromium`.
 - `session_not_ready`: call `siradig_login` before any other browser tool.
+- Session persistence: MCP stores Playwright `storage_state` at `mcp/.session/storage_state.json` and reuses it when valid; if ARCA expires the session, re-run `siradig_login`.

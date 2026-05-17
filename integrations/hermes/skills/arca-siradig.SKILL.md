@@ -76,5 +76,6 @@ Notes:
 
 - Prefer read-only operations by default.
 - Keep outputs structured and explicit about visible period/year.
+- Reuse existing session when possible by calling `siradig_login` first (it now reuses persisted state when valid).
 - If session appears expired, restart from `siradig_login`.
 - If selector matching fails for taxpayer, use exact `ARCA_SIRADIG_USER_FULLNAME` string.
