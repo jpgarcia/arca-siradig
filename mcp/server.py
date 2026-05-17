@@ -2,10 +2,11 @@
 """
 ARCA SiRADIG MCP server (portable-first, stdio JSON lines).
 
-v0.6:
+v0.7:
 - MCP-style methods: initialize, tools/list, tools/call
 - Functional browser tools using Playwright:
   - siradig_healthcheck
+  - siradig_reset_session
   - siradig_login
   - siradig_list_taxpayers
   - siradig_session_status
@@ -51,9 +52,15 @@ TOOLS: List[Dict[str, Any]] = [
             "properties": {
                 "headless": {"type": "boolean"},
                 "timeout_ms": {"type": "integer", "minimum": 5000, "maximum": 120000},
+                "force_fresh": {"type": "boolean"},
             },
             "additionalProperties": False,
         },
+    },
+    {
+        "name": "siradig_reset_session",
+        "description": "Close runtime browser state and remove persisted Playwright storage_state, forcing a fresh login on next siradig_login.",
+        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
     },
     {
         "name": "siradig_list_taxpayers",
@@ -135,7 +142,7 @@ def check_env() -> Dict[str, Any]:
             "ready": True,
             "checked_at": _utc_now(),
             "required_env": REQUIRED_ENV,
-            "server_version": "0.6.0",
+            "server_version": "0.7.0",
         }
     )
 
@@ -195,6 +202,13 @@ def _save_storage_state() -> None:
     context.storage_state(path=str(SESSION_STATE_PATH))
 
 
+def _delete_storage_state() -> bool:
+    if not SESSION_STATE_PATH.exists():
+        return False
+    SESSION_STATE_PATH.unlink(missing_ok=True)
+    return True
+
+
 def _session_state_info() -> Dict[str, Any]:
     if not SESSION_STATE_PATH.exists():
         return {"persisted": False}
@@ -218,7 +232,7 @@ def _is_logged_in_page(page) -> bool:
     return "usuario" in text and "dependencia" in text
 
 
-def _ensure_page(headless: bool):
+def _ensure_page(headless: bool, use_storage_state: bool = True):
     if (
         _BROWSER_STATE["page"] is not None
         and _BROWSER_STATE["browser"] is not None
@@ -236,7 +250,7 @@ def _ensure_page(headless: bool):
 
     pw = sync_playwright().start()
     browser = pw.chromium.launch(headless=headless)
-    storage_state_path = _load_storage_state_path()
+    storage_state_path = _load_storage_state_path() if use_storage_state else None
     if storage_state_path:
         context = browser.new_context(storage_state=storage_state_path)
     else:
@@ -347,6 +361,18 @@ def _ensure_siradig_menu(page, timeout_ms: int) -> bool:
     return "menu_sel_empresa.jsp" in page.url
 
 
+def siradig_reset_session(_: Dict[str, Any]) -> Dict[str, Any]:
+    _close_browser_state()
+    deleted = _delete_storage_state()
+    return ok(
+        {
+            "reset": True,
+            "deleted_persisted_state": deleted,
+            "session": _session_state_info(),
+        }
+    )
+
+
 def siradig_login(arguments: Dict[str, Any]) -> Dict[str, Any]:
     env_check = check_env()
     if not env_check.get("ok"):
@@ -356,12 +382,17 @@ def siradig_login(arguments: Dict[str, Any]) -> Dict[str, Any]:
     headless = arguments.get("headless")
     if not isinstance(headless, bool):
         headless = _bool_from_env("ARCA_PLAYWRIGHT_HEADLESS", True)
+    force_fresh = bool(arguments.get("force_fresh", False))
 
     cuit = os.getenv("ARCA_CUIT", "").strip()
     password = os.getenv("ARCA_PASSWORD", "").strip()
 
     try:
-        page = _ensure_page(headless=headless)
+        if force_fresh:
+            _close_browser_state()
+            _delete_storage_state()
+
+        page = _ensure_page(headless=headless, use_storage_state=not force_fresh)
 
         # Reuse persisted session when still valid.
         try:
@@ -622,6 +653,8 @@ def tool_not_implemented(name: str) -> Dict[str, Any]:
 def handle_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
     if name == "siradig_healthcheck":
         return check_env()
+    if name == "siradig_reset_session":
+        return siradig_reset_session(arguments)
     if name == "siradig_login":
         return siradig_login(arguments)
     if name == "siradig_list_taxpayers":
@@ -653,7 +686,7 @@ def mcp_initialize(req_id: Any) -> Dict[str, Any]:
         req_id,
         result={
             "protocolVersion": "2024-11-05",
-            "serverInfo": {"name": "arca-siradig", "version": "0.6.0"},
+            "serverInfo": {"name": "arca-siradig", "version": "0.7.0"},
             "capabilities": {"tools": {}},
         },
     )
