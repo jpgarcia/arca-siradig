@@ -128,4 +128,6 @@ Expected result:
 - Browser dependency errors: run `python3 -m playwright install chromium`.
 - `session_not_ready`: call `siradig_login` before any other browser tool.
 - Session persistence: MCP stores Playwright `storage_state` at `mcp/.session/storage_state.json` and reuses it when valid; if ARCA expires the session, re-run `siradig_login`.
+- Continuity check: for subsequent queries in the same chat, call `siradig_session_status` first; only recover with one `siradig_login` retry chain if needed.
 - Retry policy (skill): at most 1 automatic recovery retry on session instability; if it fails again, ask the user.
+- For ARCA tasks, never switch to generic browser click/type automation as fallback after MCP failure; keep MCP flow.

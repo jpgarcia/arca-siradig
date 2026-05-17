@@ -66,6 +66,12 @@ Notes:
   - `siradig_login` -> `siradig_list_taxpayers` -> `siradig_select_taxpayer`.
 - Do not retry more than once automatically. If it fails again, stop and ask the user how to proceed with this standard prompt:
   - "Falló nuevamente después de 1 reintento automático. ¿Cómo querés seguir?\n1) Reintentar manualmente login+selección\n2) Elegir otro contribuyente de la lista\n3) Cancelar por ahora"
+- Session continuity policy (same chat):
+  - Before any year/form query, call `siradig_session_status`.
+  - If `logged_in=true`, continue without re-login.
+  - If not logged in or tool returns `session_not_ready`, run exactly one recovery chain:
+    - `siradig_login` -> `siradig_list_taxpayers` -> `siradig_select_taxpayer`.
+  - If it still fails after that single recovery, ask the user; do not silently switch approach.
 
 2. List submitted forms (visible period)
 
@@ -85,3 +91,4 @@ Notes:
 - If selector matching fails for taxpayer, use exact `ARCA_SIRADIG_USER_FULLNAME` string.
 - Handle ARCA_CUIT/ARCA_PASSWORD as sensitive inputs. Collect them with silent prompts and avoid echoing values in terminal examples.
 - Never perform ARCA credential entry with generic browser typing tools; use `siradig_login` so credentials stay inside MCP runtime/env handling instead of chat tool traces.
+- For ARCA/SiRADIG tasks, do not fall back to generic `browser_*` tool navigation/click/type when MCP tools fail; keep MCP flow and surface the failure after one controlled retry.
