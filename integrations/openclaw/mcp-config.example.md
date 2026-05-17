@@ -1,8 +1,15 @@
 # OpenClaw MCP config example (conceptual)
 
+If you still don't have the repo locally:
+
+```bash
+git clone https://github.com/jpgarcia/arca-siradig.git
+cd arca-siradig
+```
+
 Use stdio transport pointing to:
 - command: `python3`
-- args: `/opt/data/vaults/personal/Projects/arca-siradig/mcp/server.py`
+- args: `<repo-path>/mcp/server.py`
 
 Expose required env vars to runtime:
 - `ARCA_CUIT`

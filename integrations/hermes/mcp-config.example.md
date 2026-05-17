@@ -2,10 +2,17 @@
 
 Register local stdio MCP server (with runtime env vars):
 
+If you still don't have the repo locally:
+
+```bash
+git clone https://github.com/jpgarcia/arca-siradig.git
+cd arca-siradig
+```
+
 ```bash
 hermes mcp add arca-siradig \
   --command python3 \
-  --args /opt/data/vaults/personal/Projects/arca-siradig/mcp/server.py \
+  --args <repo-path>/mcp/server.py \
   --env ARCA_CUIT=... ARCA_PASSWORD=...
 
 hermes mcp list

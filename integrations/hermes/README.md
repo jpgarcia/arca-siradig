@@ -18,5 +18,12 @@ Then in Hermes:
 
 ## Register MCP server (example)
 
-Use Hermes MCP registration to point at:
-- `python3 /opt/data/vaults/personal/Projects/arca-siradig/mcp/server.py`
+If you still don't have the repo locally:
+
+```bash
+git clone https://github.com/jpgarcia/arca-siradig.git
+cd arca-siradig
+```
+
+Use Hermes MCP registration to point at the path where YOU cloned the repo:
+- `python3 <repo-path>/mcp/server.py`
