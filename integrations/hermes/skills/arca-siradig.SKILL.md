@@ -29,44 +29,20 @@ Important behavior:
 
 ## First-run setup (Hermes clean install)
 
-If MCP tools are unavailable, offer to run these steps:
+If MCP tools are unavailable:
 
-1. Clone and install runtime dependencies
+1) Ask the user where the local repository path is.
+2) Register MCP server with local python + server.py path.
+3) Run `hermes mcp test arca-siradig`.
+4) If healthcheck reports missing env vars, ask only for those vars.
 
-```bash
-git clone https://github.com/jpgarcia/arca-siradig.git
-cd arca-siradig
-python3 -m venv .venv
-source .venv/bin/activate
-bash scripts/setup_playwright.sh
-```
-
-2. Register MCP server in Hermes (with credentials for stdio server)
-
-```bash
-hermes mcp add arca-siradig \
-  --command "$(pwd)/.venv/bin/python" \
-  --args "$(pwd)/mcp/server.py" \
-  --env ARCA_CUIT=... ARCA_PASSWORD=...
-
-hermes mcp test arca-siradig
-```
-
-3. Taxpayer full-name strategy
-
+Taxpayer full-name strategy:
 - Prefer passing `full_name` directly when calling `siradig_select_taxpayer`.
-- Optional fallback env var:
-
-```bash
-hermes config env-path
-# add optionally:
-# ARCA_SIRADIG_USER_FULLNAME=...
-```
+- Optional fallback env var: `ARCA_SIRADIG_USER_FULLNAME`.
 
 Notes:
+- Use local stdio MCP registration. Do not assume npm/pypi distribution.
 
-- This project is not an npm package. Do not suggest `npm install -g arca-siradig`.
-- MCP runs from local repository path.
 
 ## MCP Tools Expected
 
