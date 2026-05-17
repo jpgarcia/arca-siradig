@@ -62,7 +62,9 @@ Notes:
 - `siradig_healthcheck` -> `siradig_login` -> `siradig_list_taxpayers` -> `siradig_select_taxpayer` -> `siradig_get_personal_data`
 - If multiple taxpayers exist, present the list and ask user to pick one.
 - If `siradig_select_taxpayer` returns `taxpayer_not_found`, retry using one of the exact names from `siradig_list_taxpayers`.
-- If page looks not logged (portal home), call `siradig_login` again and then `siradig_list_taxpayers`.
+- If selection fails due to session/login instability, perform at most ONE automatic recovery retry:
+  - `siradig_login` -> `siradig_list_taxpayers` -> `siradig_select_taxpayer`.
+- Do not retry more than once automatically. If it fails again, stop and ask the user how to proceed.
 
 2. List submitted forms (visible period)
 
