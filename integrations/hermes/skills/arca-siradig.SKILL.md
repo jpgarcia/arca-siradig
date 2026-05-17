@@ -47,7 +47,8 @@ Notes:
 ## MCP Tools Expected
 
 - `siradig_healthcheck`
-- `siradig_login`
+- `siradig_reset_session`
+- `siradig_login` (supports `force_fresh=true`)
 - `siradig_list_taxpayers`
 - `siradig_session_status`
 - `siradig_select_taxpayer`
@@ -71,7 +72,9 @@ Notes:
   - If `logged_in=true`, continue without re-login.
   - If not logged in or tool returns `session_not_ready`, run exactly one recovery chain:
     - `siradig_login` -> `siradig_list_taxpayers` -> `siradig_select_taxpayer`.
-  - If it still fails after that single recovery, ask the user; do not silently switch approach.
+- If login state looks inconsistent (`session_not_logged_in`, `login_incomplete`, `login_without_taxpayers`, or repeated `no_taxpayers_found`), force clean recovery:
+  - `siradig_reset_session` -> `siradig_login(force_fresh=true)` -> `siradig_list_taxpayers` -> `siradig_select_taxpayer`.
+- If it still fails after that single recovery, ask the user; do not silently switch approach.
 
 2. List submitted forms (visible period)
 
