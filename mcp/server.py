@@ -2,30 +2,36 @@
 """
 ARCA SiRADIG MCP server (portable-first, stdio JSON lines).
 
-v0.2:
-- Adds MCP-style methods: initialize, tools/list, tools/call
-- Implements functional read-only baseline tools:
+v0.3:
+- MCP-style methods: initialize, tools/list, tools/call
+- Functional browser tools using Playwright:
   - siradig_healthcheck
-- Keeps siradig_* browser tools as explicit not_implemented placeholders
-
-Notes:
-- Real SiRADIG interaction will be implemented in a next iteration using
-  browser automation behind this interface.
+  - siradig_login
+  - siradig_select_taxpayer
+  - siradig_get_personal_data
+- Placeholder tools kept for next iterations:
+  - siradig_list_forms
+  - siradig_open_form_pdf
 """
 
 from __future__ import annotations
 
+import atexit
 import json
 import os
+import re
 import sys
 from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 REQUIRED_ENV = [
     "ARCA_CUIT",
     "ARCA_PASSWORD",
     "ARCA_SIRADIG_USER_FULLNAME",
 ]
+
+AFIP_LOGIN_URL = "https://auth.afip.gob.ar/contribuyente_/login.xhtml"
+SIRADIG_MENU_URL = "https://serviciosjava2.afip.gob.ar/radig/jsp/menu_sel_empresa.jsp"
 
 TOOLS: List[Dict[str, Any]] = [
     {
@@ -35,12 +41,19 @@ TOOLS: List[Dict[str, Any]] = [
     },
     {
         "name": "siradig_login",
-        "description": "Authenticate in ARCA and enter SiRADIG (SSO path).",
-        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
+        "description": "Authenticate in ARCA and navigate to SiRADIG taxpayer selection page.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "headless": {"type": "boolean"},
+                "timeout_ms": {"type": "integer", "minimum": 5000, "maximum": 120000},
+            },
+            "additionalProperties": False,
+        },
     },
     {
         "name": "siradig_select_taxpayer",
-        "description": "Select taxpayer context by full name.",
+        "description": "Select taxpayer context by full name and wait for determinarContribuyente page.",
         "inputSchema": {
             "type": "object",
             "properties": {"full_name": {"type": "string"}},
@@ -49,7 +62,7 @@ TOOLS: List[Dict[str, Any]] = [
     },
     {
         "name": "siradig_get_personal_data",
-        "description": "Read visible user fields from verDatosPersonales.do.",
+        "description": "Read visible header fields (Usuario, Representando a, Dependencia).",
         "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
     },
     {
@@ -75,6 +88,14 @@ TOOLS: List[Dict[str, Any]] = [
     },
 ]
 
+_BROWSER_STATE: Dict[str, Any] = {
+    "playwright": None,
+    "browser": None,
+    "context": None,
+    "page": None,
+    "headless": None,
+}
+
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -84,8 +105,11 @@ def ok(data: Dict[str, Any]) -> Dict[str, Any]:
     return {"ok": True, "data": data}
 
 
-def fail(code: str, message: str) -> Dict[str, Any]:
-    return {"ok": False, "error": {"code": code, "message": message}}
+def fail(code: str, message: str, details: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    payload: Dict[str, Any] = {"ok": False, "error": {"code": code, "message": message}}
+    if details:
+        payload["error"]["details"] = details
+    return payload
 
 
 def check_env() -> Dict[str, Any]:
@@ -97,9 +121,276 @@ def check_env() -> Dict[str, Any]:
             "ready": True,
             "checked_at": _utc_now(),
             "required_env": REQUIRED_ENV,
-            "server_version": "0.2.0",
+            "server_version": "0.3.0",
         }
     )
+
+
+def _get_timeout_ms(arguments: Dict[str, Any]) -> int:
+    timeout = arguments.get("timeout_ms")
+    if isinstance(timeout, int) and 5000 <= timeout <= 120000:
+        return timeout
+    return 35000
+
+
+def _bool_from_env(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _close_browser_state() -> None:
+    try:
+        if _BROWSER_STATE["context"] is not None:
+            _BROWSER_STATE["context"].close()
+    except Exception:
+        pass
+    try:
+        if _BROWSER_STATE["browser"] is not None:
+            _BROWSER_STATE["browser"].close()
+    except Exception:
+        pass
+    try:
+        if _BROWSER_STATE["playwright"] is not None:
+            _BROWSER_STATE["playwright"].stop()
+    except Exception:
+        pass
+
+    _BROWSER_STATE["playwright"] = None
+    _BROWSER_STATE["browser"] = None
+    _BROWSER_STATE["context"] = None
+    _BROWSER_STATE["page"] = None
+    _BROWSER_STATE["headless"] = None
+
+
+atexit.register(_close_browser_state)
+
+
+def _ensure_page(headless: bool):
+    if (
+        _BROWSER_STATE["page"] is not None
+        and _BROWSER_STATE["browser"] is not None
+        and _BROWSER_STATE["headless"] == headless
+    ):
+        return _BROWSER_STATE["page"]
+
+    _close_browser_state()
+    try:
+        from playwright.sync_api import sync_playwright  # type: ignore
+    except Exception as e:
+        raise RuntimeError(
+            "Playwright is not available. Install dependencies with: pip install -r requirements.txt && python -m playwright install chromium"
+        ) from e
+
+    pw = sync_playwright().start()
+    browser = pw.chromium.launch(headless=headless)
+    context = browser.new_context()
+    page = context.new_page()
+
+    _BROWSER_STATE["playwright"] = pw
+    _BROWSER_STATE["browser"] = browser
+    _BROWSER_STATE["context"] = context
+    _BROWSER_STATE["page"] = page
+    _BROWSER_STATE["headless"] = headless
+    return page
+
+
+def _fill_first(page, selectors: List[str], value: str, timeout_ms: int) -> bool:
+    for selector in selectors:
+        locator = page.locator(selector)
+        if locator.count() > 0:
+            try:
+                locator.first.fill(value, timeout=timeout_ms)
+                return True
+            except Exception:
+                continue
+    return False
+
+
+def _click_first(page, selectors: List[str], timeout_ms: int) -> bool:
+    for selector in selectors:
+        locator = page.locator(selector)
+        if locator.count() > 0:
+            try:
+                locator.first.click(timeout=timeout_ms)
+                return True
+            except Exception:
+                continue
+    return False
+
+
+def _extract_field(text: str, label: str) -> Optional[str]:
+    pattern = rf"{re.escape(label)}\s*:?\s*(.+)"
+    match = re.search(pattern, text, flags=re.IGNORECASE)
+    if not match:
+        return None
+    return match.group(1).strip()
+
+
+def siradig_login(arguments: Dict[str, Any]) -> Dict[str, Any]:
+    env_check = check_env()
+    if not env_check.get("ok"):
+        return env_check
+
+    timeout_ms = _get_timeout_ms(arguments)
+    headless = arguments.get("headless")
+    if not isinstance(headless, bool):
+        headless = _bool_from_env("ARCA_PLAYWRIGHT_HEADLESS", True)
+
+    cuit = os.getenv("ARCA_CUIT", "").strip()
+    password = os.getenv("ARCA_PASSWORD", "").strip()
+
+    try:
+        page = _ensure_page(headless=headless)
+        page.goto(AFIP_LOGIN_URL, wait_until="domcontentloaded", timeout=timeout_ms)
+
+        cuit_ok = _fill_first(
+            page,
+            [
+                "input[name='cuit']",
+                "input[name='username']",
+                "#F1\\:username",
+                "input[id*='username']",
+                "input[type='text']",
+            ],
+            cuit,
+            timeout_ms,
+        )
+        if not cuit_ok:
+            return fail("selector_not_found", "Could not find CUIT input on AFIP login page")
+
+        next_clicked = _click_first(
+            page,
+            [
+                "button:has-text('Siguiente')",
+                "input[value='Siguiente']",
+                "#F1\\:btnSiguiente",
+                "button[type='submit']",
+                "input[type='submit']",
+            ],
+            timeout_ms,
+        )
+        if not next_clicked:
+            return fail("selector_not_found", "Could not find Siguiente/submit button after CUIT")
+
+        page.wait_for_load_state("domcontentloaded", timeout=timeout_ms)
+
+        password_ok = _fill_first(
+            page,
+            [
+                "input[type='password']",
+                "input[name='password']",
+                "#F1\\:password",
+                "input[id*='password']",
+            ],
+            password,
+            timeout_ms,
+        )
+        if not password_ok:
+            return fail("selector_not_found", "Could not find password input after CUIT step")
+
+        login_clicked = _click_first(
+            page,
+            [
+                "button:has-text('Ingresar')",
+                "input[value='Ingresar']",
+                "button[type='submit']",
+                "input[type='submit']",
+            ],
+            timeout_ms,
+        )
+        if not login_clicked:
+            return fail("selector_not_found", "Could not find Ingresar/submit button for password step")
+
+        page.wait_for_load_state("networkidle", timeout=timeout_ms)
+        page.goto(SIRADIG_MENU_URL, wait_until="domcontentloaded", timeout=timeout_ms)
+
+        return ok(
+            {
+                "logged_in": True,
+                "headless": headless,
+                "current_url": page.url,
+                "title": page.title(),
+                "menu_expected": "menu_sel_empresa.jsp",
+            }
+        )
+    except Exception as e:
+        return fail("login_failed", "Failed during ARCA login flow", {"exception": str(e)})
+
+
+def siradig_select_taxpayer(arguments: Dict[str, Any]) -> Dict[str, Any]:
+    full_name = (arguments.get("full_name") or os.getenv("ARCA_SIRADIG_USER_FULLNAME", "")).strip()
+    if not full_name:
+        return fail("missing_full_name", "Missing full_name argument and ARCA_SIRADIG_USER_FULLNAME env var")
+
+    page = _BROWSER_STATE.get("page")
+    if page is None:
+        return fail("session_not_ready", "No active browser session. Call siradig_login first")
+
+    try:
+        if "menu_sel_empresa.jsp" not in page.url:
+            page.goto(SIRADIG_MENU_URL, wait_until="domcontentloaded", timeout=30000)
+
+        candidates = [
+            page.locator(f"input[type='submit'][value='{full_name}']"),
+            page.get_by_role("button", name=full_name),
+            page.get_by_role("link", name=full_name),
+            page.locator(f"text={full_name}"),
+        ]
+
+        clicked = False
+        for locator in candidates:
+            if locator.count() > 0:
+                locator.first.click(timeout=30000)
+                clicked = True
+                break
+
+        if not clicked:
+            return fail("taxpayer_not_found", f"Could not find selectable taxpayer button/link for '{full_name}'")
+
+        page.wait_for_load_state("networkidle", timeout=30000)
+        return ok(
+            {
+                "selected_full_name": full_name,
+                "current_url": page.url,
+                "expected_path_hint": "determinarContribuyente.do",
+            }
+        )
+    except Exception as e:
+        return fail("select_taxpayer_failed", "Failed selecting taxpayer context", {"exception": str(e)})
+
+
+def siradig_get_personal_data(_: Dict[str, Any]) -> Dict[str, Any]:
+    page = _BROWSER_STATE.get("page")
+    if page is None:
+        return fail("session_not_ready", "No active browser session. Call siradig_login first")
+
+    try:
+        page.wait_for_load_state("domcontentloaded", timeout=20000)
+        body_text = page.locator("body").inner_text(timeout=10000)
+
+        usuario = _extract_field(body_text, "Usuario")
+        representando = _extract_field(body_text, "Representando a")
+        dependencia = _extract_field(body_text, "Dependencia")
+
+        if not any([usuario, representando, dependencia]):
+            return fail(
+                "personal_data_not_found",
+                "Could not parse header fields from current page",
+                {"current_url": page.url},
+            )
+
+        return ok(
+            {
+                "current_url": page.url,
+                "usuario": usuario,
+                "representando_a": representando,
+                "dependencia": dependencia,
+            }
+        )
+    except Exception as e:
+        return fail("get_personal_data_failed", "Failed reading personal data", {"exception": str(e)})
 
 
 def tool_not_implemented(name: str) -> Dict[str, Any]:
@@ -109,14 +400,14 @@ def tool_not_implemented(name: str) -> Dict[str, Any]:
 def handle_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
     if name == "siradig_healthcheck":
         return check_env()
+    if name == "siradig_login":
+        return siradig_login(arguments)
+    if name == "siradig_select_taxpayer":
+        return siradig_select_taxpayer(arguments)
+    if name == "siradig_get_personal_data":
+        return siradig_get_personal_data(arguments)
 
-    if name in {
-        "siradig_login",
-        "siradig_select_taxpayer",
-        "siradig_get_personal_data",
-        "siradig_list_forms",
-        "siradig_open_form_pdf",
-    }:
+    if name in {"siradig_list_forms", "siradig_open_form_pdf"}:
         return tool_not_implemented(name)
 
     return fail("unknown_tool", f"Unknown tool: {name}")
@@ -136,7 +427,7 @@ def mcp_initialize(req_id: Any) -> Dict[str, Any]:
         req_id,
         result={
             "protocolVersion": "2024-11-05",
-            "serverInfo": {"name": "arca-siradig", "version": "0.2.0"},
+            "serverInfo": {"name": "arca-siradig", "version": "0.3.0"},
             "capabilities": {"tools": {}},
         },
     )
