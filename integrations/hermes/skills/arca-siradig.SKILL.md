@@ -83,4 +83,4 @@ Notes:
 - Reuse existing session when possible by calling `siradig_login` first (it now reuses persisted state when valid).
 - If session appears expired, restart from `siradig_login`.
 - If selector matching fails for taxpayer, use exact `ARCA_SIRADIG_USER_FULLNAME` string.
-- Never expose credentials in chat, logs, or command output. Do not run or suggest commands that print secret env vars (e.g., `print(os.getenv("ARCA_PASSWORD"))`, `echo $ARCA_PASSWORD`).
+- Handle ARCA_CUIT/ARCA_PASSWORD as sensitive inputs. Collect them with silent prompts and avoid echoing values in terminal examples.
