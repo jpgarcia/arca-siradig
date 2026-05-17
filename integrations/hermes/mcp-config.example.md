@@ -15,13 +15,15 @@ hermes mcp test arca-siradig
 Then install/load the Hermes adapter skill:
 
 ```bash
-hermes skills install https://raw.githubusercontent.com/<your-org-or-user>/arca-siradig/main/integrations/hermes/skills/arca-siradig.SKILL.md
+hermes skills install https://raw.githubusercontent.com/jpgarcia/arca-siradig/main/integrations/hermes/skills/arca-siradig.SKILL.md
 ```
 
 In a fresh Hermes session:
+
 - `/reload-mcp`
 - `/reload-skills`
 - `/skill arca-siradig`
 
 Optional env var:
+
 - `ARCA_SIRADIG_USER_FULLNAME` (used as default when `siradig_select_taxpayer` is called without `full_name`)

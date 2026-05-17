@@ -22,6 +22,7 @@ This skill is the orchestration layer for ARCA/SiRADIG workflows.
 Execution is done via MCP tools exposed by the `arca-siradig` MCP server.
 
 Important behavior:
+
 - Do not ask for ARCA credentials before confirming MCP server setup.
 - First verify MCP availability, then run `siradig_healthcheck`.
 - Ask for missing env vars only if healthcheck reports them missing.
@@ -30,16 +31,18 @@ Important behavior:
 
 If MCP tools are unavailable, offer to run these steps:
 
-1) Clone and install runtime dependencies
+1. Clone and install runtime dependencies
+
 ```bash
-git clone https://github.com/<your-org-or-user>/arca-siradig.git
+git clone https://github.com/jpgarcia/arca-siradig.git
 cd arca-siradig
 python3 -m venv .venv
 source .venv/bin/activate
 bash scripts/setup_playwright.sh
 ```
 
-2) Register MCP server in Hermes (with credentials for stdio server)
+2. Register MCP server in Hermes (with credentials for stdio server)
+
 ```bash
 hermes mcp add arca-siradig \
   --command "$(pwd)/.venv/bin/python" \
@@ -49,9 +52,11 @@ hermes mcp add arca-siradig \
 hermes mcp test arca-siradig
 ```
 
-3) Taxpayer full-name strategy
+3. Taxpayer full-name strategy
+
 - Prefer passing `full_name` directly when calling `siradig_select_taxpayer`.
 - Optional fallback env var:
+
 ```bash
 hermes config env-path
 # add optionally:
@@ -59,6 +64,7 @@ hermes config env-path
 ```
 
 Notes:
+
 - This project is not an npm package. Do not suggest `npm install -g arca-siradig`.
 - MCP runs from local repository path.
 
@@ -73,13 +79,16 @@ Notes:
 
 ## Standard flows
 
-1) Current user data
+1. Current user data
+
 - `siradig_healthcheck` -> `siradig_login` -> `siradig_select_taxpayer` -> `siradig_get_personal_data`
 
-2) List submitted forms (visible period)
+2. List submitted forms (visible period)
+
 - `siradig_healthcheck` -> `siradig_login` -> `siradig_select_taxpayer` -> `siradig_list_forms`
 
-3) List submitted forms for target year
+3. List submitted forms for target year
+
 - `siradig_healthcheck` -> `siradig_login` -> `siradig_select_taxpayer` -> `siradig_list_forms(year=YYYY)`
 - then ask user whether to open a specific PDF via `siradig_open_form_pdf`
 

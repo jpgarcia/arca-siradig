@@ -1,9 +1,11 @@
 # E2E from a clean Hermes installation
 
 ## Goal
+
 Validate that a fresh Hermes instance can install/use the ARCA SiRADIG MCP + skill end-to-end.
 
 ## Checklist
+
 1. Fresh Hermes install works (`hermes doctor`).
 2. Repo cloned locally.
 3. MCP registered with required env vars:
@@ -39,7 +41,7 @@ hermes mcp add arca-siradig \
 hermes mcp test arca-siradig
 
 # 4) Install skill
-hermes skills install https://raw.githubusercontent.com/<YOUR_GITHUB_USER_OR_ORG>/arca-siradig/main/integrations/hermes/skills/arca-siradig.SKILL.md
+hermes skills install https://raw.githubusercontent.com/jpgarcia/arca-siradig/main/integrations/hermes/skills/arca-siradig.SKILL.md
 
 # 5) Start Hermes and load
 hermes
@@ -49,6 +51,7 @@ hermes
 ```
 
 ## Expected current result (v0.3)
+
 - `siradig_healthcheck`: implemented and validates env vars.
 - `siradig_login`: implemented with Playwright.
 - `siradig_select_taxpayer`: implemented with `full_name` input (optional env fallback).
@@ -57,7 +60,9 @@ hermes
 - `siradig_open_form_pdf`: not implemented.
 
 ## Publish prep
+
 Before public release:
+
 - Add LICENSE
 - Add CONTRIBUTING.md
 - Add release tags/changelog
