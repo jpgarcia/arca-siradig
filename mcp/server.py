@@ -2,11 +2,12 @@
 """
 ARCA SiRADIG MCP server (portable-first, stdio JSON lines).
 
-v0.3:
+v0.4:
 - MCP-style methods: initialize, tools/list, tools/call
 - Functional browser tools using Playwright:
   - siradig_healthcheck
   - siradig_login
+  - siradig_list_taxpayers
   - siradig_select_taxpayer
   - siradig_get_personal_data
 - Placeholder tools kept for next iterations:
@@ -49,6 +50,11 @@ TOOLS: List[Dict[str, Any]] = [
             },
             "additionalProperties": False,
         },
+    },
+    {
+        "name": "siradig_list_taxpayers",
+        "description": "List selectable taxpayer entries currently visible in menu_sel_empresa.jsp.",
+        "inputSchema": {"type": "object", "properties": {}, "additionalProperties": False},
     },
     {
         "name": "siradig_select_taxpayer",
@@ -120,7 +126,7 @@ def check_env() -> Dict[str, Any]:
             "ready": True,
             "checked_at": _utc_now(),
             "required_env": REQUIRED_ENV,
-            "server_version": "0.3.0",
+            "server_version": "0.4.0",
         }
     )
 
@@ -227,6 +233,68 @@ def _extract_field(text: str, label: str) -> Optional[str]:
     return match.group(1).strip()
 
 
+def _list_visible_taxpayers(page) -> List[str]:
+    names: List[str] = []
+
+    submit_inputs = page.locator("input[type='submit'][value]")
+    for i in range(submit_inputs.count()):
+        value = (submit_inputs.nth(i).get_attribute("value") or "").strip()
+        if value:
+            names.append(value)
+
+    for locator in [page.locator("button"), page.locator("a")]:
+        count = locator.count()
+        for i in range(count):
+            text = (locator.nth(i).inner_text() or "").strip()
+            if text and len(text) >= 5:
+                names.append(text)
+
+    deduped: List[str] = []
+    for n in names:
+        if n not in deduped:
+            deduped.append(n)
+
+    ignored_tokens = ["ingresar", "siguiente", "salir", "inicio", "siradig"]
+    filtered = [
+        n
+        for n in deduped
+        if not any(tok in n.lower() for tok in ignored_tokens)
+        and any(ch.isalpha() for ch in n)
+        and len(n.split()) >= 2
+    ]
+    return filtered[:30]
+
+
+def _open_siradig_service(page, timeout_ms: int) -> bool:
+    tile_selectors = [
+        "text=SiRADIG - Trabajador",
+        "text=SiRADIG",
+        "a:has-text('SiRADIG - Trabajador')",
+        "a:has-text('SiRADIG')",
+        "button:has-text('SiRADIG - Trabajador')",
+        "button:has-text('SiRADIG')",
+    ]
+    return _click_first(page, tile_selectors, timeout_ms)
+
+
+def _ensure_siradig_menu(page, timeout_ms: int) -> None:
+    if "menu_sel_empresa.jsp" in page.url:
+        return
+
+    try:
+        page.goto(SIRADIG_MENU_URL, wait_until="domcontentloaded", timeout=timeout_ms)
+    except Exception:
+        pass
+
+    if "menu_sel_empresa.jsp" in page.url:
+        return
+
+    _open_siradig_service(page, timeout_ms)
+    page.wait_for_load_state("domcontentloaded", timeout=timeout_ms)
+    if "menu_sel_empresa.jsp" not in page.url:
+        page.goto(SIRADIG_MENU_URL, wait_until="domcontentloaded", timeout=timeout_ms)
+
+
 def siradig_login(arguments: Dict[str, Any]) -> Dict[str, Any]:
     env_check = check_env()
     if not env_check.get("ok"):
@@ -303,7 +371,8 @@ def siradig_login(arguments: Dict[str, Any]) -> Dict[str, Any]:
             return fail("selector_not_found", "Could not find Ingresar/submit button for password step")
 
         page.wait_for_load_state("networkidle", timeout=timeout_ms)
-        page.goto(SIRADIG_MENU_URL, wait_until="domcontentloaded", timeout=timeout_ms)
+        _ensure_siradig_menu(page, timeout_ms)
+        taxpayers = _list_visible_taxpayers(page)
 
         return ok(
             {
@@ -312,10 +381,30 @@ def siradig_login(arguments: Dict[str, Any]) -> Dict[str, Any]:
                 "current_url": page.url,
                 "title": page.title(),
                 "menu_expected": "menu_sel_empresa.jsp",
+                "available_taxpayers": taxpayers,
             }
         )
     except Exception as e:
         return fail("login_failed", "Failed during ARCA login flow", {"exception": str(e)})
+
+
+def siradig_list_taxpayers(_: Dict[str, Any]) -> Dict[str, Any]:
+    page = _BROWSER_STATE.get("page")
+    if page is None:
+        return fail("session_not_ready", "No active browser session. Call siradig_login first")
+
+    try:
+        _ensure_siradig_menu(page, 30000)
+        taxpayers = _list_visible_taxpayers(page)
+        if not taxpayers:
+            return fail(
+                "no_taxpayers_found",
+                "No selectable taxpayers were found on current SiRADIG selector page",
+                {"current_url": page.url},
+            )
+        return ok({"current_url": page.url, "taxpayers": taxpayers})
+    except Exception as e:
+        return fail("list_taxpayers_failed", "Failed listing taxpayers", {"exception": str(e)})
 
 
 def siradig_select_taxpayer(arguments: Dict[str, Any]) -> Dict[str, Any]:
@@ -328,14 +417,20 @@ def siradig_select_taxpayer(arguments: Dict[str, Any]) -> Dict[str, Any]:
         return fail("session_not_ready", "No active browser session. Call siradig_login first")
 
     try:
-        if "menu_sel_empresa.jsp" not in page.url:
-            page.goto(SIRADIG_MENU_URL, wait_until="domcontentloaded", timeout=30000)
+        _ensure_siradig_menu(page, 30000)
 
+        taxpayers = _list_visible_taxpayers(page)
+        target_lower = full_name.lower()
+        matched_name = next((t for t in taxpayers if t.lower() == target_lower), None)
+        if matched_name is None:
+            matched_name = next((t for t in taxpayers if target_lower in t.lower() or t.lower() in target_lower), None)
+
+        click_name = matched_name or full_name
         candidates = [
-            page.locator(f"input[type='submit'][value='{full_name}']"),
-            page.get_by_role("button", name=full_name),
-            page.get_by_role("link", name=full_name),
-            page.locator(f"text={full_name}"),
+            page.locator(f"input[type='submit'][value='{click_name}']"),
+            page.get_by_role("button", name=click_name),
+            page.get_by_role("link", name=click_name),
+            page.locator(f"text={click_name}"),
         ]
 
         clicked = False
@@ -346,12 +441,17 @@ def siradig_select_taxpayer(arguments: Dict[str, Any]) -> Dict[str, Any]:
                 break
 
         if not clicked:
-            return fail("taxpayer_not_found", f"Could not find selectable taxpayer button/link for '{full_name}'")
+            return fail(
+                "taxpayer_not_found",
+                f"Could not find selectable taxpayer button/link for '{full_name}'",
+                {"available_taxpayers": taxpayers},
+            )
 
         page.wait_for_load_state("networkidle", timeout=30000)
         return ok(
             {
-                "selected_full_name": full_name,
+                "selected_full_name": click_name,
+                "requested_full_name": full_name,
                 "current_url": page.url,
                 "expected_path_hint": "determinarContribuyente.do",
             }
@@ -401,6 +501,8 @@ def handle_tool(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         return check_env()
     if name == "siradig_login":
         return siradig_login(arguments)
+    if name == "siradig_list_taxpayers":
+        return siradig_list_taxpayers(arguments)
     if name == "siradig_select_taxpayer":
         return siradig_select_taxpayer(arguments)
     if name == "siradig_get_personal_data":
@@ -426,7 +528,7 @@ def mcp_initialize(req_id: Any) -> Dict[str, Any]:
         req_id,
         result={
             "protocolVersion": "2024-11-05",
-            "serverInfo": {"name": "arca-siradig", "version": "0.3.0"},
+            "serverInfo": {"name": "arca-siradig", "version": "0.4.0"},
             "capabilities": {"tools": {}},
         },
     )

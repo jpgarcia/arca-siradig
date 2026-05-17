@@ -14,12 +14,13 @@ Keep the MCP server framework-agnostic, then add thin integration layers per age
 - `integrations/openclaw/` -> OpenClaw-specific setup/playbook
 - `scripts/` -> setup helpers
 
-## Current status (v0.3)
+## Current status (v0.4)
 
 Implemented MCP tools:
 
 - `siradig_healthcheck`
-- `siradig_login` (Playwright)
+- `siradig_login` (Playwright + portal-to-SiRADIG handoff)
+- `siradig_list_taxpayers`
 - `siradig_select_taxpayer` (Playwright)
 - `siradig_get_personal_data` (header extraction)
 
@@ -93,6 +94,7 @@ hermes config env-path
 
 - `siradig_healthcheck`
 - `siradig_login`
+- `siradig_list_taxpayers` (show options and pick exact name)
 - `siradig_select_taxpayer`
 - `siradig_get_personal_data`
 

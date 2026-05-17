@@ -16,7 +16,8 @@ Validate that a fresh Hermes instance can install/use the ARCA SiRADIG MCP + ski
 6. `siradig_healthcheck` returns `ready=true`.
 7. Real flow works:
    - `siradig_login`
-   - `siradig_select_taxpayer` (by argument `full_name` or optional env fallback)
+   - `siradig_list_taxpayers`
+   - `siradig_select_taxpayer` (pick exact name from listed taxpayers)
    - `siradig_get_personal_data`
 
 ## Commands
@@ -50,10 +51,11 @@ hermes
 # /skill arca-siradig
 ```
 
-## Expected current result (v0.3)
+## Expected current result (v0.4)
 
 - `siradig_healthcheck`: implemented and validates env vars.
-- `siradig_login`: implemented with Playwright.
+- `siradig_login`: implemented with Playwright (includes portal-to-SiRADIG handoff).
+- `siradig_list_taxpayers`: implemented and returns selectable names.
 - `siradig_select_taxpayer`: implemented with `full_name` input (optional env fallback).
 - `siradig_get_personal_data`: implemented (`usuario`, `representando_a`, `dependencia`).
 - `siradig_list_forms`: not implemented.

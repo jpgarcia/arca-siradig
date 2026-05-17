@@ -48,6 +48,7 @@ Notes:
 
 - `siradig_healthcheck`
 - `siradig_login`
+- `siradig_list_taxpayers`
 - `siradig_select_taxpayer`
 - `siradig_get_personal_data`
 - `siradig_list_forms`
@@ -57,7 +58,10 @@ Notes:
 
 1. Current user data
 
-- `siradig_healthcheck` -> `siradig_login` -> `siradig_select_taxpayer` -> `siradig_get_personal_data`
+- `siradig_healthcheck` -> `siradig_login` -> `siradig_list_taxpayers` -> `siradig_select_taxpayer` -> `siradig_get_personal_data`
+- If multiple taxpayers exist, present the list and ask user to pick one.
+- If `siradig_select_taxpayer` returns `taxpayer_not_found`, retry using one of the exact names from `siradig_list_taxpayers`.
+- If page looks not logged (portal home), call `siradig_login` again and then `siradig_list_taxpayers`.
 
 2. List submitted forms (visible period)
 

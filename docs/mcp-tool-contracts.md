@@ -21,6 +21,15 @@ Output data:
 - current_url
 - session_state
 
+## siradig_list_taxpayers
+Input: {}
+Behavior:
+- Ensures current session is on `menu_sel_empresa.jsp`
+- Lists selectable taxpayer names shown in buttons/links/submit inputs
+Output data:
+- taxpayers (array)
+- current_url
+
 ## siradig_select_taxpayer
 Input:
 - full_name (optional; defaults ARCA_SIRADIG_USER_FULLNAME)
