@@ -222,14 +222,26 @@ def _session_state_info() -> Dict[str, Any]:
 
 def _is_logged_in_page(page) -> bool:
     try:
-        text = (page.locator("body").inner_text(timeout=5000) or "").lower()
+        title_text = (page.title() or "").lower()
     except Exception:
-        text = ""
-    if "usuario no logueado" in text:
+        title_text = ""
+
+    try:
+        body_text = (page.locator("body").inner_text(timeout=5000) or "").lower()
+    except Exception:
+        body_text = ""
+
+    if "usuario no logueado" in title_text or "usuario no logueado" in body_text:
         return False
-    if "menu_sel_empresa.jsp" in page.url or "determinarcontribuyente.do" in page.url.lower():
+
+    current_url = (page.url or "").lower()
+    if "determinarcontribuyente.do" in current_url:
         return True
-    return "usuario" in text and "dependencia" in text
+
+    if "menu_sel_empresa.jsp" in current_url:
+        return len(_list_visible_taxpayers(page)) > 0
+
+    return "usuario" in body_text and "dependencia" in body_text
 
 
 def _ensure_page(headless: bool, use_storage_state: bool = True):
@@ -395,24 +407,25 @@ def siradig_login(arguments: Dict[str, Any]) -> Dict[str, Any]:
         page = _ensure_page(headless=headless, use_storage_state=not force_fresh)
 
         # Reuse persisted session when still valid.
-        try:
-            menu_ready = _ensure_siradig_menu(page, timeout_ms)
-            if menu_ready and _is_logged_in_page(page):
-                taxpayers = _list_visible_taxpayers(page)
-                return ok(
-                    {
-                        "logged_in": True,
-                        "reused_session": True,
-                        "headless": headless,
-                        "current_url": page.url,
-                        "title": page.title(),
-                        "menu_expected": "menu_sel_empresa.jsp",
-                        "available_taxpayers": taxpayers,
-                        "session": _session_state_info(),
-                    }
-                )
-        except Exception:
-            pass
+        if not force_fresh:
+            try:
+                menu_ready = _ensure_siradig_menu(page, timeout_ms)
+                if menu_ready and _is_logged_in_page(page):
+                    taxpayers = _list_visible_taxpayers(page)
+                    return ok(
+                        {
+                            "logged_in": True,
+                            "reused_session": True,
+                            "headless": headless,
+                            "current_url": page.url,
+                            "title": page.title(),
+                            "menu_expected": "menu_sel_empresa.jsp",
+                            "available_taxpayers": taxpayers,
+                            "session": _session_state_info(),
+                        }
+                    )
+            except Exception:
+                pass
 
         page.goto(AFIP_LOGIN_URL, wait_until="domcontentloaded", timeout=timeout_ms)
 
