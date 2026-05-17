@@ -50,24 +50,24 @@ source .venv/bin/activate
 bash scripts/setup_playwright.sh
 ```
 
-2) Set required secrets in Hermes env
+2) Register MCP in Hermes
+```bash
+hermes mcp add arca-siradig --command "$(pwd)/.venv/bin/python $(pwd)/mcp/server.py"
+hermes mcp test arca-siradig
+```
+
+3) Install Hermes skill adapter from this repo (optional but recommended)
+```bash
+hermes skills install https://raw.githubusercontent.com/<your-org-or-user>/arca-siradig/main/integrations/hermes/skills/arca-siradig.SKILL.md
+```
+
+4) Set ARCA credentials in Hermes env
 ```bash
 hermes config env-path
 # edit the shown file and add:
 # ARCA_CUIT=...
 # ARCA_PASSWORD=...
 # ARCA_SIRADIG_USER_FULLNAME=...
-```
-
-3) Register MCP in Hermes
-```bash
-hermes mcp add arca-siradig --command "$(pwd)/.venv/bin/python $(pwd)/mcp/server.py"
-hermes mcp test arca-siradig
-```
-
-4) Optional: install Hermes skill adapter from this repo
-```bash
-hermes skills install https://raw.githubusercontent.com/<your-org-or-user>/arca-siradig/main/integrations/hermes/skills/arca-siradig.SKILL.md
 ```
 
 5) First real test in Hermes chat
@@ -81,6 +81,11 @@ Expected result:
 - login reaches `menu_sel_empresa.jsp`
 - taxpayer selection opens URL containing `determinarContribuyente.do`
 - personal data returns: `usuario`, `representando_a`, `dependencia`
+
+## Hermes UX notes
+- This repo is not an npm package. Do not run `npm install -g arca-siradig`.
+- Skill installation cannot auto-install MCP by itself today.
+- Best UX is: MCP registered first, then skill installed.
 
 ## Security notes
 - Never hardcode ARCA credentials in repo files.

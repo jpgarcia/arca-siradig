@@ -1,29 +1,17 @@
 ---
 name: arca-siradig
-description: "Use when operating ARCA/AFIP SiRADIG through the arca-siradig MCP tools for authentication, taxpayer selection, and read-only data retrieval."
-version: 0.2.0
+description: "Use when operating ARCA/AFIP SiRADIG through the arca-siradig MCP server for authentication, taxpayer selection, and read-only data retrieval."
+version: 0.3.0
 author: Juan Pablo Garcia Dalolla
 license: MIT
+category: finance
 platforms: [macos, linux]
-required_environment_variables:
-  - name: ARCA_CUIT
-    prompt: "ARCA CUIT"
-    help: "Taxpayer CUIT used for ARCA login (11 digits)."
-    required_for: "Authentication in ARCA"
-  - name: ARCA_PASSWORD
-    prompt: "ARCA password"
-    help: "Clave Fiscal / ARCA password for the CUIT account."
-    required_for: "Authentication in ARCA"
-  - name: ARCA_SIRADIG_USER_FULLNAME
-    prompt: "SiRADIG full name"
-    help: "Exact full name displayed in SiRADIG taxpayer selector."
-    required_for: "Taxpayer context selection"
 metadata:
   hermes:
-    tags: [arca, afip, siradig, mcp, taxes, argentina]
+    tags: [finance, arca, afip, siradig, mcp, taxes, argentina]
     related_skills: [hermes-agent, native-mcp]
-    requires_toolsets: [mcp, file, terminal]
-    requires_tools: [read_file, terminal]
+    requires_toolsets: [terminal, file]
+    requires_tools: [terminal, read_file]
 ---
 
 # ARCA SiRADIG
@@ -31,15 +19,44 @@ metadata:
 ## Overview
 
 This skill is the orchestration layer for ARCA/SiRADIG workflows.
-Execution should be done via MCP tools provided by the `arca-siradig` MCP server.
+Execution is done via MCP tools exposed by the `arca-siradig` MCP server.
 
-## When to Use
+Important behavior:
+- Do not ask for ARCA credentials before confirming MCP server setup.
+- First verify MCP availability, then run `siradig_healthcheck`.
+- Ask for missing env vars only if healthcheck reports them missing.
 
-Use this skill when the user asks to:
-- check current SiRADIG user personal data,
-- list submitted forms for the visible period,
-- list submitted forms for a specific year,
-- open a submitted form PDF.
+## First-run setup (Hermes clean install)
+
+If MCP tools are unavailable, offer to run these steps:
+
+1) Clone and install runtime dependencies
+```bash
+git clone https://github.com/<your-org-or-user>/arca-siradig.git
+cd arca-siradig
+python3 -m venv .venv
+source .venv/bin/activate
+bash scripts/setup_playwright.sh
+```
+
+2) Register MCP server in Hermes
+```bash
+hermes mcp add arca-siradig --command "$(pwd)/.venv/bin/python $(pwd)/mcp/server.py"
+hermes mcp test arca-siradig
+```
+
+3) Configure credentials in Hermes env (only after MCP is configured)
+```bash
+hermes config env-path
+# add:
+# ARCA_CUIT=...
+# ARCA_PASSWORD=...
+# ARCA_SIRADIG_USER_FULLNAME=...
+```
+
+Notes:
+- This project is not an npm package. Do not suggest `npm install -g arca-siradig`.
+- MCP runs from local repository path.
 
 ## MCP Tools Expected
 
@@ -50,20 +67,21 @@ Use this skill when the user asks to:
 - `siradig_list_forms`
 - `siradig_open_form_pdf`
 
-## Standard Flows
+## Standard flows
 
 1) Current user data
-- login -> select_taxpayer -> get_personal_data
+- `siradig_healthcheck` -> `siradig_login` -> `siradig_select_taxpayer` -> `siradig_get_personal_data`
 
 2) List submitted forms (visible period)
-- login -> select_taxpayer -> list_forms(year omitted)
+- `siradig_healthcheck` -> `siradig_login` -> `siradig_select_taxpayer` -> `siradig_list_forms`
 
 3) List submitted forms for target year
-- login -> select_taxpayer -> list_forms(year=YYYY)
-- then ask user if they want to open a specific PDF
+- `siradig_healthcheck` -> `siradig_login` -> `siradig_select_taxpayer` -> `siradig_list_forms(year=YYYY)`
+- then ask user whether to open a specific PDF via `siradig_open_form_pdf`
 
-## Notes
+## Operating rules
 
 - Prefer read-only operations by default.
 - Keep outputs structured and explicit about visible period/year.
-- If internal URLs return session-expired state, re-run through the full SSO path.
+- If session appears expired, restart from `siradig_login`.
+- If selector matching fails for taxpayer, use exact `ARCA_SIRADIG_USER_FULLNAME` string.
