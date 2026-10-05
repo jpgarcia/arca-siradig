@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+session.json
+storage-state.json
+storageState.json
+.arca-siradig/
+arca-siradig-inspection*/
+f572*.pdf
+*.tgz
+*.bundle
+dist/
+test-results/
+playwright-report/
+node_modules
+draft-plan.md
