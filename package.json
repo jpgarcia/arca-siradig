@@ -2,6 +2,18 @@
   "name": "arca-siradig",
   "version": "1.0.0",
   "description": "CLI to inspect, update, print and submit ARCA SiRADIG Form 572 drafts.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jpgarcia/arca-siradig.git"
+  },
+  "homepage": "https://github.com/jpgarcia/arca-siradig#readme",
+  "bugs": {
+    "url": "https://github.com/jpgarcia/arca-siradig/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "type": "module",
   "bin": {
     "arca-siradig": "./dist/src/cli/index.js"

@@ -6,7 +6,30 @@ preview, print and submit a form to the employer.
 
 ## Installation
 
-From a local checkout, use Node.js 20.17+ (20.x), 22.13+ (22.x), or 23.5+:
+Use Node.js 20.17+ (20.x), 22.13+ (22.x), or 23.5+. Run the published CLI with
+`npx`:
+
+```bash
+npx arca-siradig --help
+```
+
+Before the first login, install the Chromium version required by the CLI's Playwright
+dependency. The browser is cached for subsequent commands:
+
+```bash
+npx --yes --package=arca-siradig playwright install chromium
+npx arca-siradig login
+npx arca-siradig form summary --period 2026
+```
+
+Alternatively, install the command globally:
+
+```bash
+npm install --global arca-siradig
+arca-siradig --help
+```
+
+For development from a local checkout:
 
 ```bash
 npm ci
@@ -28,7 +51,10 @@ populated `.env`, keep it private (for example, `chmod 600 .env` on macOS/Linux)
 
 ## Usage
 
-To make the local checkout available as a command outside this folder, build it and link it:
+Examples below use `arca-siradig` directly after a global installation or local link.
+When using `npx`, prefix each command with `npx`.
+
+To make a local checkout available as a command outside its folder, build it and link it:
 
 ```bash
 npm run build
