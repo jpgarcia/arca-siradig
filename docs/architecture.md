@@ -203,7 +203,9 @@ creation. All committed fixtures use fictional names, addresses, identifiers and
 
 The development TypeScript configuration checks runtime code, tests and inspection tools.
 `scripts/build.mjs` performs that check, removes stale output, then compiles only runtime
-sources through `tsconfig.build.json`, without source maps. `prepack` runs this clean build.
+sources through `tsconfig.build.json`, without source maps. It marks the CLI entry point
+executable after compilation so existing `npm link` commands keep working after a rebuild.
+`prepack` runs this clean build.
 The package files allowlist includes runtime JavaScript/declarations, README and LICENSE;
 npm also includes `package.json`. Tests and their compiled data, development tools,
 environment files, source maps and inspection captures are not shipped.
