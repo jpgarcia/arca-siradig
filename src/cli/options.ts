@@ -11,8 +11,11 @@ export type HelpCommand = {
     | "personal-data"
     | "employees"
     | "deductions"
-    | "form";
+    | "form"
+    | "mcp";
 };
+
+export type McpCommand = { kind: "mcp"; headless: boolean; allowWrites: boolean };
 
 export type InteractiveCommand = {
   kind: "interactive";
@@ -143,6 +146,7 @@ export type FormSubmitCommand = {
 };
 
 export type CliCommand =
+  | McpCommand
   | FormSubmitCommand
   | FormPreviewCommand
   | HelpCommand
@@ -162,6 +166,7 @@ export type CliCommand =
   | FormDeductionsRemoveItemReceiptCommand;
 
 export function parseCliOptions(args: string[]): CliCommand {
+  let allowWrites = false;
   let accept = false;
   let headless = true;
   let interactive = false;
@@ -343,6 +348,11 @@ export function parseCliOptions(args: string[]): CliCommand {
       continue;
     }
 
+    if (arg === "--allow-writes") {
+      allowWrites = true;
+      continue;
+    }
+
     if (arg === "--format") {
       format = parseOutputFormat(readFlagValue(args, index, "--format"));
       index += 1;
@@ -366,6 +376,18 @@ export function parseCliOptions(args: string[]): CliCommand {
   }
   if (help || args.length === 0) {
     return { kind: "help", headless, topic: inferHelpTopic(positionals) };
+  }
+  if (allowWrites && positionals[0] !== "mcp") {
+    throw new Error("--allow-writes is only supported for mcp.");
+  }
+  if (positionals[0] === "mcp") {
+    if (positionals.length !== 1 || interactive) throw new Error("Use arca-siradig mcp [options].");
+    for (const arg of args) {
+      if (arg.startsWith("-") && !["--headless", "--allow-writes"].includes(arg.split("=", 1)[0])) {
+        throw new Error(`Unsupported mcp option: ${arg.split("=", 1)[0]}`);
+      }
+    }
+    return { kind: "mcp", headless, allowWrites };
   }
   if (accept && !(positionals[0] === "form" && positionals[1] === "submit")) {
     throw new Error("--aceptar is only supported for form submit.");
@@ -653,6 +675,8 @@ function inferHelpTopic(positionals: string[]): HelpCommand["topic"] {
   if (positionals[0] === "login") {
     return "login";
   }
+
+  if (positionals[0] === "mcp") return "mcp";
 
   if (positionals[0] === "form") return positionals[1] === "deductions" ? "deductions" : "form";
 

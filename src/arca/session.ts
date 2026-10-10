@@ -45,8 +45,11 @@ export async function createBrowserSession(
 }
 
 export async function closeBrowserSession(session: BrowserSession): Promise<void> {
-  await session.context.close();
-  await session.browser.close();
+  try {
+    await session.context.close();
+  } finally {
+    await session.browser.close();
+  }
 }
 
 export async function loginToArca(page: Page, credentials: ArcaCredentials): Promise<void> {

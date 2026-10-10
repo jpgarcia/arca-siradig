@@ -14,6 +14,7 @@ const topics: HelpCommand["topic"][] = [
   "employees",
   "form",
   "deductions",
+  "mcp",
 ];
 
 test("all help tables align descriptions across commands and options, with or without color", () => {
@@ -86,6 +87,7 @@ test("help takes precedence over subcommands and their required arguments", () =
     { args: ["--interactive"], topic: "root" },
     { args: ["login"], topic: "login" },
     { args: ["logout"], topic: "logout" },
+    { args: ["mcp"], topic: "mcp" },
     { args: ["persons", "list"], topic: "persons" },
     { args: ["persons", "select"], topic: "persons" },
     { args: ["persons", "select", "0"], topic: "persons" },

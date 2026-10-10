@@ -4,6 +4,10 @@ CLI for signing in to ARCA and managing **SiRADIG - Trabajador** Form 572 drafts
 inspect personal data, employers and deductions; add or remove supported receipts;
 preview, print and submit a form to the employer.
 
+The same package includes a local MCP server for AI clients that support **stdio**, such
+as Claude Desktop, Claude Code, and Codex. The existing CLI commands and default help
+behavior remain available.
+
 ## Installation
 
 Use Node.js 20.17+ (20.x), 22.13+ (22.x), or 23.5+. Run the published CLI with
@@ -48,6 +52,64 @@ ARCA_PASSWORD=<your-tax-password>
 The CLI uses populated values as prompt defaults; the password is masked and can be
 accepted by pressing `enter`. Prefer the interactive password prompt. If you create a
 populated `.env`, keep it private (for example, `chmod 600 .env` on macOS/Linux).
+
+## Local MCP for AI clients
+
+MCP support starts in **1.1.0**. If that release is not yet available on npm, use the
+local-checkout configuration in [the MCP guide](docs/mcp.md#local-checkout).
+
+Install Chromium and sign in **in your terminal**, under the same OS user that runs the
+AI client. The chat never needs your tax password:
+
+```bash
+npx --yes --package=arca-siradig@1.1.0 playwright install chromium
+npx arca-siradig@1.1.0 login
+```
+
+For Claude Desktop and other clients that accept `mcpServers` JSON, merge this entry into
+their MCP configuration, then restart the client:
+
+```json
+{
+  "mcpServers": {
+    "arca-siradig": {
+      "command": "npx",
+      "args": ["-y", "arca-siradig@1.1.0", "mcp"]
+    }
+  }
+}
+```
+
+For Claude Code:
+
+```bash
+claude mcp add --transport stdio --scope user arca-siradig -- npx -y arca-siradig@1.1.0 mcp
+```
+
+For Codex:
+
+```bash
+codex mcp add arca-siradig -- npx -y arca-siradig@1.1.0 mcp
+```
+
+The default server supports consultations, person selection, draft summaries, and PDF
+downloads. Add `--allow-writes` after `mcp` to enable supported draft changes and receipt
+uploads. Changes require explicit person and fiscal year. Submission to the employer
+continues through the CLI's existing confirmation flow.
+
+Example request: “Show my SiRADIG draft for 2026 and its deductions. Review the fields of
+this receipt with me before adding it.” The AI client interprets attachments; the MCP
+accepts their structured fields, not raw documents.
+
+This integration requires a client that can launch a local stdio process. A web chat
+without local MCP support cannot connect to it. Sessions stay on your machine, while the
+requested tax data returned by tools becomes visible to your AI client and its provider.
+
+See [the MCP guide](docs/mcp.md) for the full tool catalog, local development, and setup
+troubleshooting. Configuration examples follow the official guides for
+[Claude Desktop](https://modelcontextprotocol.io/docs/develop/connect-local-servers),
+[Claude Code](https://code.claude.com/docs/en/mcp), and
+[Codex](https://learn.chatgpt.com/docs/extend/mcp?surface=cli).
 
 ## Usage
 

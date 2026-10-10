@@ -2,13 +2,21 @@
 
 ## Summary
 
-V1 is a command-based CLI with an optional interactive mode. It combines console prompts
-with Playwright, and the automation pieces are intentionally decoupled so they can later
-be reused from headless commands, skills, or an MCP server.
+The package provides a command-based CLI with an optional interactive mode and a local
+MCP server. Both use Playwright and shared session workflows; console prompts remain in
+the CLI. Bare `arca-siradig` still prints help, while `arca-siradig mcp` serves stdio.
 
 ## Modules
 
 - `src/cli/`: command parser, command dispatch, prompts, and console rendering.
+- `src/mcp/`: official MCP SDK server, tool schemas, annotations, structured results, and
+  stdio lifecycle. Loaded only when the CLI dispatches `mcp`.
+- `src/services/session.ts`: saved-session loading, person selection, typed actionable
+  session errors, and read-only session refresh shared by the CLI and MCP.
+- `src/services/siradig.ts`: prompt-free workflows for MCP consultations and draft changes,
+  with per-process serialization and browser cleanup.
+- `src/services/structured-output.ts`: shared data mapping; the previous CLI module reexports
+  it to preserve import compatibility.
 - `src/cli/help.ts`: declarative help pages and a shared renderer for aligned command
   and option tables, wrapped descriptions, and shell-safe multiline examples.
 - `src/files/pdf.ts`: PDF destination validation, directory defaults, and exclusive creation
@@ -209,6 +217,38 @@ executable after compilation so existing `npm link` commands keep working after 
 The package files allowlist includes runtime JavaScript/declarations, README and LICENSE;
 npm also includes `package.json`. Tests and their compiled data, development tools,
 environment files, source maps and inspection captures are not shipped.
+
+## Local MCP
+
+See [the MCP guide](mcp.md) for installation, client configurations, and the tool catalog.
+The existing executable adds a separate `mcp` subcommand, preserving the CLI entry point,
+commands, output formats, and submission confirmation. No remote listener or credential
+exchange is introduced. Login stays in the CLI; MCP reuses the approved session file.
+
+The official server SDK owns protocol negotiation and stdio framing. stdout contains only
+protocol messages. Tool errors provide session recovery instructions or safe generic
+diagnostics; raw browser errors are never returned. The SDK validates strict schemas before
+dispatch, including receipt dates, year/month, CUIT shape, amounts and reimbursement.
+Tests connect the official client through both legacy and modern stdio negotiation.
+
+Twelve default tools cover metadata, people, personal data, employers, fiscal context,
+official summary/PDF and deduction reads. Person selection updates the existing local
+selection; PDF download creates a new private local file and is annotated as a local write.
+`--allow-writes` explicitly exposes three additional draft-change tools. Their schemas
+require person and fiscal year and mark mutations as non-idempotent; saving is attempted
+once and callers must consult the draft afterward. Enabling tools is process-level consent,
+while any per-tool user approval remains the client's responsibility. Employer submission
+continues exclusively through the CLI's existing confirmation flow.
+
+Operations in one MCP service are queued, load the latest saved session, create a browser,
+and close it in `finally`. Disconnect/shutdown closes an active browser and rejects queued
+work. Read recovery preserves person selection and fiscal context, including when a parser
+fails on the expiry page. No mutation is passed to the read/navigation retry helper.
+This queue does not coordinate separate MCP or CLI processes. The MCP never returns session
+cookies or password defaults, but requested tax data is visible to the connected AI client.
+
+The package allowlist additionally includes `docs/mcp.md` so installed users can read the
+client setup guide. Version metadata is shared by help and MCP in `src/version.ts`.
 
 ## Future Extension
 

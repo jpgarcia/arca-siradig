@@ -1,3 +1,4 @@
+import { VERSION } from "../version.js";
 import type { HelpCommand } from "./options.js";
 
 type HelpRow = readonly [label: string, description: string];
@@ -30,12 +31,27 @@ const HELP_PAGES: Record<HelpCommand["topic"], HelpPage> = {
       ["personal-data <command>", "Read personal data"],
       ["employees <command>", "Read employer data"],
       ["form <command>", "Inspect, print or submit a fiscal form"],
+      ["mcp", "Start the local MCP server over stdio"],
     ],
     options: [["-i, --interactive", "Start the interactive read-only workflow"]],
     notes: ["Run arca-siradig <command> --help for command details."],
     examples: [
       { description: "Log in", args: ["login"] },
       { description: "Read a form summary", args: ["form", "summary", "--period=2026"] },
+    ],
+  },
+  mcp: {
+    usage: "arca-siradig mcp [options]",
+    description: "Start a local MCP server for compatible AI clients, reusing the CLI session.",
+    options: [["--allow-writes", "Enable draft changes; employer submission stays in the CLI"]],
+    notes: [
+      "Log in separately with arca-siradig login. Never share your tax password with the AI client.",
+      "stdout is reserved for MCP messages. Configure the client to launch this command over stdio.",
+      "Consultations are enabled by default. Draft changes require explicit person and fiscal year.",
+    ],
+    examples: [
+      { description: "Start the server for consultations", args: ["mcp"] },
+      { description: "Enable draft changes", args: ["mcp", "--allow-writes"] },
     ],
   },
   login: {
@@ -249,7 +265,7 @@ export function renderHelp(
   );
   const descriptionColumn = 4 + labelWidth + 2;
   const stacked = width - descriptionColumn < 24;
-  const lines: string[] = [styled(`ARCA SiRADIG CLI ${options.version ?? "1.0.0"}`, "38;5;245")];
+  const lines: string[] = [styled(`ARCA SiRADIG CLI ${options.version ?? VERSION}`, "38;5;245")];
   const append = (text: string, indent: number, style?: string) => {
     for (const line of wrapHelpText(text, width - indent))
       lines.push(" ".repeat(indent) + (style ? styled(line, style) : line));

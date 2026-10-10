@@ -36,7 +36,6 @@ import {
 } from "../arca/persons.js";
 import { listReceiptTypes } from "../arca/receipt-types.js";
 import {
-  ARCA_LOGIN_URL,
   ARCA_PORTAL_URL,
   ArcaLoginError,
   type BrowserSession,
@@ -47,6 +46,12 @@ import {
   openSiradigFromPortal,
 } from "../arca/session.js";
 import { submitForm } from "../arca/submission.js";
+import * as sessionService from "../services/session.js";
+import {
+  isLoginPage,
+  PERSON_SELECTION_URL,
+  saveSelectedPersonSession,
+} from "../services/session.js";
 import { createSessionStore, type SessionStore, type StoredSession } from "../session/store.js";
 import { formatCliError } from "./errors.js";
 import { renderHelp } from "./help.js";
@@ -75,8 +80,6 @@ import {
   toStructuredPersonalData,
 } from "./structured-output.js";
 
-const PERSON_SELECTION_URL = "https://serviciosjava2.afip.gob.ar/radig/jsp/menu_sel_empresa.jsp";
-
 async function main(): Promise<void> {
   const command = parseCliOptions(process.argv.slice(2));
   const store = createSessionStore();
@@ -93,6 +96,12 @@ async function main(): Promise<void> {
     case "interactive":
       await runInteractive(command);
       return;
+    case "mcp": {
+      // Load the MCP SDK only for this command. Ordinary CLI startup stays unchanged.
+      const { startMcpServer } = await import("../mcp/stdio.js");
+      startMcpServer(command);
+      return;
+    }
     case "login":
       await runLogin(command, store);
       return;
@@ -848,51 +857,27 @@ async function canListPersons(
   }
 }
 
-async function openStoredSession(
-  headless: boolean,
-  store: SessionStore,
-): Promise<{
-  cuit: string;
-  selectedPerson: StoredSession["selectedPerson"];
-  session: Awaited<ReturnType<typeof createBrowserSession>>;
-} | null> {
-  const storedSession = await store.read();
-  if (!storedSession) {
-    console.error("No hay una sesión guardada. Ejecutá `arca-siradig login`.");
+// Translate service errors into the CLI's existing messages and exit behavior.
+async function cliSessionResult<T>(operation: () => Promise<T>): Promise<T | null> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (!(error instanceof sessionService.SessionError)) throw error;
+    console.error(error.message);
     process.exitCode = 1;
     return null;
   }
-
-  return {
-    cuit: storedSession.cuit,
-    selectedPerson: storedSession.selectedPerson ?? null,
-    session: await createBrowserSession({
-      headless,
-      storageState: storedSession.storageState,
-    }),
-  };
 }
 
-async function openPersonSelectionPage(
-  session: BrowserSession,
-  store: SessionStore,
-  cuit: string,
-): Promise<boolean> {
-  if (
-    !(await navigateWithSessionRefresh(session, store, cuit, (page) =>
-      page.goto(PERSON_SELECTION_URL, { waitUntil: "domcontentloaded" }),
-    ))
-  ) {
-    return false;
-  }
+async function openStoredSession(headless: boolean, store: SessionStore) {
+  return cliSessionResult(() => sessionService.openStoredSession(headless, store));
+}
 
-  if (await isLoginPage(session.page)) {
-    console.error("La sesión expiró. Ejecutá `arca-siradig login`.");
-    process.exitCode = 1;
-    return false;
-  }
-
-  return true;
+async function openPersonSelectionPage(session: BrowserSession, store: SessionStore, cuit: string) {
+  return (
+    (await cliSessionResult(() => sessionService.openPersonSelectionPage(session, store, cuit))) !==
+    null
+  );
 }
 
 async function ensurePersonSelected(
@@ -901,87 +886,20 @@ async function ensurePersonSelected(
   cuit: string,
   personIdentifier: string | undefined,
   storedSelectedPerson: StoredSession["selectedPerson"],
-): Promise<StoredSession["selectedPerson"]> {
-  const targetPerson = await resolveTargetPerson(personIdentifier, storedSelectedPerson);
-  if (!targetPerson) {
-    console.error(formatNoSelectedPersonMessage());
-    process.exitCode = 1;
-    return null;
-  }
-
-  if (!(await openPersonSelectionPage(session, store, cuit))) {
-    return null;
-  }
-
-  await acceptReminderModalIfPresent(session.page);
-
-  const persons = await listPersons(session.page);
-  if (persons.length === 0) {
-    console.error("No se pudieron listar personas. Ejecutá `arca-siradig login`.");
-    process.exitCode = 1;
-    return null;
-  }
-
-  const selectedPerson = persons.find(
-    (person) => person.id === targetPerson || person.name === targetPerson,
+) {
+  return cliSessionResult(() =>
+    sessionService.ensurePersonSelected(
+      session,
+      store,
+      cuit,
+      personIdentifier,
+      storedSelectedPerson,
+    ),
   );
-  if (!selectedPerson) {
-    console.error(`No se encontró la persona "${targetPerson}".`);
-    process.exitCode = 1;
-    return null;
-  }
-
-  await selectPerson(session.page, selectedPerson.id ?? selectedPerson.name);
-  await acceptReminderModal(session.page, { timeoutMs: 5_000 });
-  await saveSelectedPersonSession(store, cuit, session, selectedPerson);
-
-  return selectedPerson;
-}
-
-async function resolveTargetPerson(
-  personIdentifier: string | undefined,
-  storedSelectedPerson: StoredSession["selectedPerson"],
-): Promise<string | null> {
-  if (personIdentifier) {
-    return personIdentifier;
-  }
-
-  if (storedSelectedPerson?.id) {
-    return storedSelectedPerson.id;
-  }
-
-  if (storedSelectedPerson?.name) {
-    return storedSelectedPerson.name;
-  }
-
-  return null;
 }
 
 function formatPersonText(id: string | null, name: string): string {
   return `ID de selección: ${id ?? ""}\nNombre Completo: ${name}`;
-}
-
-function formatNoSelectedPersonMessage(): string {
-  return [
-    "No hay una persona seleccionada.",
-    "Ejecutá:",
-    "- `arca-siradig persons list` para ver las personas disponibles y luego",
-    "- `arca-siradig persons select <id|nombre>`.",
-  ].join("\n");
-}
-
-async function saveSelectedPersonSession(
-  store: SessionStore,
-  cuit: string,
-  session: BrowserSession,
-  selectedPerson: StoredSession["selectedPerson"],
-): Promise<void> {
-  await store.write({
-    cuit,
-    createdAt: new Date().toISOString(),
-    selectedPerson,
-    storageState: await session.context.storageState(),
-  });
 }
 
 async function readWithSessionRefresh<T>(
@@ -991,17 +909,9 @@ async function readWithSessionRefresh<T>(
   read: (page: Parameters<typeof loginToArca>[0]) => Promise<T>,
   formContext?: FormContext,
 ): Promise<T | null> {
-  let result: T | null = null;
-  const ready = await navigateWithSessionRefresh(
-    session,
-    store,
-    cuit,
-    async (page) => {
-      result = await read(page);
-    },
-    formContext,
+  return cliSessionResult(() =>
+    sessionService.readWithSessionRefresh(session, store, cuit, read, formContext),
   );
-  return ready ? result : null;
 }
 
 async function navigateWithSessionRefresh(
@@ -1011,77 +921,11 @@ async function navigateWithSessionRefresh(
   navigate: (page: Parameters<typeof loginToArca>[0]) => Promise<unknown>,
   formContext?: FormContext,
 ): Promise<boolean> {
-  const navigatedPage = await navigate(session.page);
-  if (isBrowserPage(navigatedPage)) {
-    session.page = navigatedPage;
-  }
-
-  if (!isExpiredPortalSessionUrl(session.page.url())) {
-    return true;
-  }
-
-  const selectedPerson = formContext ? (await store.read())?.selectedPerson : null;
-  if (!(await refreshSiradigSession(session, store, cuit))) {
-    console.error("La sesión expiró. Ejecutá `arca-siradig login`.");
-    process.exitCode = 1;
-    return false;
-  }
-
-  if (formContext) {
-    const restoredPerson = await ensurePersonSelected(
-      session,
-      store,
-      cuit,
-      undefined,
-      selectedPerson ?? { id: null, name: formContext.person.name },
-    );
-    if (!restoredPerson) return false;
-    await selectFormPeriod(session.page, {
-      period: formContext.period,
-      person: formContext.person.id,
-      selector: restoredPerson.id ?? restoredPerson.name,
-    });
-  }
-  const retriedPage = await navigate(session.page);
-  if (isBrowserPage(retriedPage)) {
-    session.page = retriedPage;
-  }
-
-  if (isExpiredPortalSessionUrl(session.page.url())) {
-    console.error("La sesión expiró. Ejecutá `arca-siradig login`.");
-    process.exitCode = 1;
-    return false;
-  }
-
-  return true;
-}
-
-function isBrowserPage(value: unknown): value is Parameters<typeof loginToArca>[0] {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  return "url" in value && "goto" in value;
-}
-
-async function refreshSiradigSession(
-  session: BrowserSession,
-  store: SessionStore,
-  cuit: string,
-): Promise<boolean> {
-  await session.page.goto(ARCA_PORTAL_URL, { waitUntil: "domcontentloaded" });
-  if (await isLoginPage(session.page)) {
-    return false;
-  }
-
-  session.page = await openSiradigFromPortal(session.page);
-  await store.write({
-    cuit,
-    createdAt: new Date().toISOString(),
-    storageState: await session.context.storageState(),
-  });
-
-  return true;
+  return (
+    (await cliSessionResult(() =>
+      sessionService.navigateWithSessionRefresh(session, store, cuit, navigate, formContext),
+    )) !== null
+  );
 }
 
 async function runInteractive(
@@ -1155,10 +999,6 @@ async function promptAndLogin(page: Parameters<typeof loginToArca>[0]): Promise<
       usePasswordDefault = false;
     }
   }
-}
-
-async function isLoginPage(page: Parameters<typeof loginToArca>[0]): Promise<boolean> {
-  return page.url().startsWith(ARCA_LOGIN_URL) || page.getByRole("spinbutton").isVisible();
 }
 
 function handleCommandError(error: unknown): void {
