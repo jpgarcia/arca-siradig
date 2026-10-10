@@ -131,7 +131,7 @@ async function selectPersonOnWorkerPage(
     }
   }
 
-  throw new Error(`Person "${personIdentifier}" was not found.`);
+  throw new Error(`No se encontró la persona "${personIdentifier}".`);
 }
 
 function normalize(value: string | null): string {

@@ -100,10 +100,10 @@ test("fetches only the consultation endpoint without following redirects and dis
   ]);
   expect(mock.isDisposed()).toBe(true);
   await expect(fetchSiradigJson(mock.client, "guardar.do", "data")).rejects.toThrow(
-    "not an allowed consultation",
+    "consulta permitida",
   );
   await expect(fetchSiradigJson(mock.client, "https://example.com/", "data")).rejects.toThrow(
-    "not an allowed consultation",
+    "consulta permitida",
   );
   expect(mock.calls).toHaveLength(1);
 });

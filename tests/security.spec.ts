@@ -34,7 +34,7 @@ test("error formatting redacts repeated literal, escaped and encoded passwords",
   );
   const message = safeErrorMessage(error, [secret]);
   expect(message).toContain("Timeout: fill(");
-  expect(message.match(/\[REDACTED\]/g)).toHaveLength(4);
+  expect(message.match(/\[OCULTO\]/g)).toHaveLength(4);
   expect(message).not.toContain("synthetic");
   expect(safeErrorMessage("plain diagnostic", [undefined, ""])).toBe("plain diagnostic");
 });
@@ -47,7 +47,7 @@ test("CLI errors redact every password argument and the environment default", ()
       ["--password", "first-secret", "--password=second-secret"],
       "default-secret",
     ),
-  ).toBe("[REDACTED] / [REDACTED] / [REDACTED]");
+  ).toBe("[OCULTO] / [OCULTO] / [OCULTO]");
 });
 
 test("the actual CLI does not echo a password when the command is missing", async () => {
@@ -60,7 +60,7 @@ test("the actual CLI does not echo a password when the command is missing", asyn
     secret,
   ]).catch((error: { code: number; stdout: string; stderr: string }) => error);
   expect("code" in result && result.code).toBe(1);
-  expect(result.stderr).toContain("Unknown command: (missing)");
+  expect(result.stderr).toContain("Comando desconocido: (sin comando)");
   expect(`${result.stdout}${result.stderr}`).not.toContain(secret);
 });
 
@@ -81,7 +81,7 @@ test("login strips credentials from a real Playwright fill failure", async ({ pa
     (error: unknown) => error,
   );
   expect(error).toBeInstanceOf(Error);
-  expect(String(error)).toContain("[REDACTED]");
+  expect(String(error)).toContain("[OCULTO]");
   expect(String(error)).not.toContain("synthetic");
   expect((error as Error).cause).toBeUndefined();
 });

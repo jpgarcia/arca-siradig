@@ -12,179 +12,214 @@ type HelpPage = {
   examples?: HelpExample[];
 };
 
-const PERSON_OPTION: HelpRow = ["--person <id|name>", "Override the stored person selection"];
-const FORMAT_OPTION: HelpRow = ["--format <text|json>", "Output format (default: text)"];
-const PERIOD_OPTION: HelpRow = ["--period <YYYY>", "Fiscal year; required for changes"];
+const PERSON_OPTION: HelpRow = [
+  "--person <id|nombre>",
+  "Usar otra persona en lugar de la selección guardada",
+];
+const FORMAT_OPTION: HelpRow = ["--format <text|json>", "Formato de salida (predeterminado: text)"];
+const PERIOD_OPTION: HelpRow = [
+  "--period <AAAA>",
+  "Período fiscal; obligatorio para modificar el formulario",
+];
 const GLOBAL_OPTIONS: HelpRow[] = [
-  ["-h, --help", "Show command help"],
-  ["--headless <true|false>", "Run without a visible browser (default: true)"],
+  ["-h, --help", "Mostrar la ayuda del comando"],
+  ["--headless <true|false>", "Ejecutar sin mostrar el navegador (predeterminado: true)"],
 ];
 
 const HELP_PAGES: Record<HelpCommand["topic"], HelpPage> = {
   root: {
-    usage: "arca-siradig [options] <command>",
-    description: "Manage ARCA SiRADIG sessions, people and fiscal forms.",
+    usage: "arca-siradig [opciones] <comando>",
+    description: "Gestioná sesiones, personas y formularios fiscales de ARCA SiRADIG.",
     commands: [
-      ["login", "Log into ARCA and store the session"],
-      ["logout", "Remove the stored session"],
-      ["persons <command>", "List people or select a person"],
-      ["personal-data <command>", "Read personal data"],
-      ["employees <command>", "Read employer data"],
-      ["form <command>", "Inspect, print or submit a fiscal form"],
-      ["mcp", "Start the local MCP server over stdio"],
+      ["login", "Iniciar sesión en ARCA y guardarla"],
+      ["logout", "Eliminar la sesión guardada"],
+      ["persons <comando>", "Listar personas o seleccionar una"],
+      ["personal-data <comando>", "Consultar datos personales"],
+      ["employees <comando>", "Consultar datos de empleadores"],
+      ["form <comando>", "Consultar, imprimir o enviar un formulario fiscal"],
+      ["mcp", "Iniciar el servidor MCP local por stdio"],
     ],
-    options: [["-i, --interactive", "Start the interactive read-only workflow"]],
-    notes: ["Run arca-siradig <command> --help for command details."],
+    options: [["-i, --interactive", "Iniciar el modo interactivo de consulta"]],
+    notes: ["Ejecutá arca-siradig <comando> --help para ver los detalles de un comando."],
     examples: [
-      { description: "Log in", args: ["login"] },
-      { description: "Read a form summary", args: ["form", "summary", "--period=2026"] },
+      { description: "Iniciar sesión", args: ["login"] },
+      {
+        description: "Consultar el resumen de un formulario",
+        args: ["form", "summary", "--period=2026"],
+      },
     ],
   },
   mcp: {
-    usage: "arca-siradig mcp [options]",
-    description: "Start a local MCP server for compatible AI clients, reusing the CLI session.",
-    options: [["--allow-writes", "Enable draft changes; employer submission stays in the CLI"]],
+    usage: "arca-siradig mcp [opciones]",
+    description:
+      "Iniciá un servidor MCP local para clientes de IA compatibles, usando la sesión del CLI.",
+    options: [
+      [
+        "--allow-writes",
+        "Habilitar cambios en borradores; el envío al empleador se hace desde el CLI",
+      ],
+    ],
     notes: [
-      "Log in separately with arca-siradig login. Never share your tax password with the AI client.",
-      "stdout is reserved for MCP messages. Configure the client to launch this command over stdio.",
-      "Consultations are enabled by default. Draft changes require explicit person and fiscal year.",
+      "Iniciá sesión con arca-siradig login desde la terminal. Nunca compartas tu clave fiscal con el cliente de IA.",
+      "stdout se reserva para mensajes MCP. Configurá el cliente para ejecutar este comando por stdio.",
+      "Las consultas están habilitadas de forma predeterminada. Para modificar un borrador, indicá la persona y el período fiscal.",
     ],
     examples: [
-      { description: "Start the server for consultations", args: ["mcp"] },
-      { description: "Enable draft changes", args: ["mcp", "--allow-writes"] },
+      { description: "Iniciar el servidor para consultas", args: ["mcp"] },
+      { description: "Habilitar cambios en borradores", args: ["mcp", "--allow-writes"] },
     ],
   },
   login: {
-    usage: "arca-siradig login [options]",
-    description: "Log into ARCA and store the session. Missing credentials are prompted for.",
+    usage: "arca-siradig login [opciones]",
+    description: "Iniciá sesión en ARCA y guardala. El CLI te pide las credenciales que falten.",
     options: [
-      ["--cuit <cuit>", "ARCA CUIT/CUIL"],
-      ["--password <password>", "ARCA tax password"],
+      ["--cuit <cuit>", "CUIT/CUIL de ARCA"],
+      ["--password <clave>", "Clave fiscal de ARCA"],
     ],
     notes: [
-      "Prefer the password prompt. --password values may appear in shell history and process arguments.",
+      "Ingresá la clave fiscal cuando el CLI te la pida. Si usás --password, puede quedar en el historial de la terminal y en los argumentos del proceso.",
     ],
     examples: [
-      { description: "Enter credentials interactively", args: ["login"] },
-      { description: "Log in with a visible browser", args: ["login", "--headless=false"] },
+      { description: "Ingresar las credenciales desde la terminal", args: ["login"] },
+      {
+        description: "Iniciar sesión con el navegador visible",
+        args: ["login", "--headless=false"],
+      },
     ],
   },
   logout: {
     usage: "arca-siradig logout",
-    description: "Remove the stored session from ~/.arca-siradig/session.json.",
-    examples: [{ description: "Remove the local session", args: ["logout"] }],
+    description: "Eliminá la sesión guardada en ~/.arca-siradig/session.json.",
+    examples: [{ description: "Eliminar la sesión local", args: ["logout"] }],
   },
   persons: {
-    usage: "arca-siradig persons <command> [options]",
-    description: "Manage people and the stored person selection.",
+    usage: "arca-siradig persons <comando> [opciones]",
+    description: "Gestioná las personas disponibles y la selección guardada.",
     commands: [
-      ["list", "List the available people"],
-      ["select <id|name>", "Select a person by the listed ID or name"],
+      ["list", "Listar las personas disponibles"],
+      ["select <id|nombre>", "Seleccionar una persona por el ID o nombre de la lista"],
     ],
-    options: [["--format <text|json>", "Output format for list (default: text)"]],
-    notes: ["The listed selection ID may be an internal index, rather than a CUIT."],
+    options: [["--format <text|json>", "Formato de salida de list (predeterminado: text)"]],
+    notes: [
+      "El ID de selección puede ser un índice interno, como 0. Usá el que aparece en la lista; no asumas que es un CUIT.",
+    ],
     examples: [
-      { description: "List people", args: ["persons", "list"] },
-      { description: "Select a person by ID", args: ["persons", "select", "0"] },
+      { description: "Listar personas", args: ["persons", "list"] },
+      { description: "Seleccionar una persona por ID", args: ["persons", "select", "0"] },
     ],
   },
   "personal-data": {
-    usage: "arca-siradig personal-data <command> [options]",
-    description: "Read personal data for the selected person.",
-    commands: [["show [person]", "Show the personal data sections visible in SiRADIG"]],
+    usage: "arca-siradig personal-data <comando> [opciones]",
+    description: "Consultá los datos personales de la persona seleccionada.",
+    commands: [["show [persona]", "Mostrar las secciones de datos personales de SiRADIG"]],
     options: [PERSON_OPTION, FORMAT_OPTION],
-    examples: [{ description: "Show personal data", args: ["personal-data", "show"] }],
+    examples: [{ description: "Consultar datos personales", args: ["personal-data", "show"] }],
   },
   employees: {
-    usage: "arca-siradig employees <command> [options]",
-    description: "Read employer information for the selected person.",
+    usage: "arca-siradig employees <comando> [opciones]",
+    description: "Consultá los empleadores de la persona seleccionada.",
     commands: [
-      ["list [person]", "List employers"],
-      ["show --employee-cuit <cuit>", "Show one employer by CUIT"],
+      ["list [persona]", "Listar empleadores"],
+      ["show --employee-cuit <cuit>", "Consultar un empleador por CUIT"],
     ],
     options: [
       PERSON_OPTION,
-      ["--employee-cuit <cuit>", "Employer CUIT; required for show"],
+      ["--employee-cuit <cuit>", "CUIT del empleador; obligatorio para show"],
       FORMAT_OPTION,
     ],
     examples: [
-      { description: "List employers", args: ["employees", "list"] },
+      { description: "Listar empleadores", args: ["employees", "list"] },
       {
-        description: "Show an employer",
+        description: "Consultar un empleador",
         args: ["employees", "show", "--employee-cuit=30000000001"],
       },
     ],
   },
   form: {
-    usage: "arca-siradig form <command> [options]",
-    description: "Inspect, print or submit the selected person's fiscal form draft.",
+    usage: "arca-siradig form <comando> [opciones]",
+    description: "Consultá, imprimí o enviá el borrador fiscal de la persona seleccionada.",
     commands: [
-      ["show", "Show the represented person and selected fiscal year"],
-      ["summary", "Read the official draft preview"],
-      ["print --path <file|folder>", "Download the official draft PDF"],
-      ["submit --period <YYYY>", "Send the form; prompts to accept or cancel"],
-      ["deductions <command>", "List, inspect, add or remove deductions"],
+      ["show", "Mostrar la persona representada y el período fiscal"],
+      ["summary", "Consultar la vista previa oficial del borrador"],
+      ["print --path <archivo|carpeta>", "Descargar el PDF oficial del borrador"],
+      ["submit --period <AAAA>", "Enviar el formulario; pide aceptar o cancelar"],
+      ["deductions <comando>", "Listar, consultar, agregar o eliminar deducciones"],
     ],
     options: [
       PERSON_OPTION,
       PERIOD_OPTION,
-      ["--path <file|folder>", "PDF destination; required for print"],
-      ["--aceptar", "Confirm Generar Presentación without a prompt; submit only"],
-      ["--format <text|json>", "Output format for show, summary and submit (default: text)"],
+      ["--path <archivo|carpeta>", "Destino del PDF; obligatorio para print"],
+      ["--aceptar", "Aceptar Generar Presentación sin preguntar; solo para submit"],
+      [
+        "--format <text|json>",
+        "Formato de salida de show, summary y submit (predeterminado: text)",
+      ],
     ],
     notes: [
-      "Read commands may omit --period and report ARCA's selected fiscal year.",
-      "Directory destinations use f572-<year>-borrador.pdf. Existing filenames get (1), (2), etc.",
-      "Submission requires --period. Without an interactive terminal, --aceptar is also required.",
-      "Run arca-siradig form deductions --help for deduction commands.",
+      "Podés omitir --period en las consultas; informan el período seleccionado por ARCA.",
+      "Si indicás una carpeta, se usa f572-<año>-borrador.pdf. Si el archivo existe, se agrega (1), (2), etc.",
+      "El envío requiere --period. Si no hay una terminal interactiva, también requiere --aceptar.",
+      "Ejecutá arca-siradig form deductions --help para ver los comandos de deducciones.",
     ],
     examples: [
-      { description: "Read a draft summary", args: ["form", "summary", "--period=2026"] },
       {
-        description: "Save the draft PDF in the current directory",
+        description: "Consultar el resumen del borrador",
+        args: ["form", "summary", "--period=2026"],
+      },
+      {
+        description: "Guardar el PDF del borrador en la carpeta actual",
         args: ["form", "print", "--period=2026", "--path=./"],
       },
       {
-        description: "Review and confirm submission interactively",
+        description: "Revisar y confirmar el envío desde la terminal",
         args: ["form", "submit", "--period=2026"],
       },
     ],
   },
   deductions: {
-    usage: "arca-siradig form deductions <command> [options]",
-    description: "Read deductions or update the selected fiscal form draft.",
+    usage: "arca-siradig form deductions <comando> [opciones]",
+    description: "Consultá las deducciones o modificá el borrador fiscal seleccionado.",
     commands: [
-      ["list", "List deductions for the selected person"],
-      ["list-receipt-types", "List the receipt type catalog"],
-      ["show <id>", "Show one deduction by ID"],
-      ["add-item", "Add a monthly deduction item"],
-      ["add-item-receipt", "Add a receipt to a deduction"],
-      ["remove-item-receipt", "Remove a medical expense receipt"],
+      ["list", "Listar las deducciones de la persona seleccionada"],
+      ["list-receipt-types", "Listar el catálogo de tipos de comprobante"],
+      ["show <id>", "Consultar una deducción por ID"],
+      ["add-item", "Agregar un detalle mensual a una deducción"],
+      ["add-item-receipt", "Agregar un comprobante a una deducción"],
+      ["remove-item-receipt", "Eliminar un comprobante de gastos médicos"],
     ],
     options: [
       PERIOD_OPTION,
       PERSON_OPTION,
-      ["--type <type>", "Deduction type; required for add-item and add-item-receipt"],
-      ["--cuit <cuit>", "Provider CUIT; required for changes"],
-      ["--month <1-12>", "Month number; required for add-item and add-item-receipt"],
-      ["--amount <amount>", "Amount; required for add-item and add-item-receipt"],
-      ["--date <YYYY-MM-DD>", "Receipt date; required for add-item-receipt"],
-      ["--receipt-type <id>", "Receipt type ID; required for add-item-receipt"],
-      ["--number <value>", "Receipt number; required for adding or removing receipts"],
-      ["--reimbursed-amount <amount>", "Required for medical expense receipts (gastos-medicos)"],
-      ["--format <text|json>", "Output format for list, show and receipt types (default: text)"],
+      ["--type <tipo>", "Tipo de deducción; obligatorio para add-item y add-item-receipt"],
+      ["--cuit <cuit>", "CUIT del prestador; obligatorio para modificar el borrador"],
+      ["--month <1-12>", "Número de mes; obligatorio para add-item y add-item-receipt"],
+      ["--amount <importe>", "Importe; obligatorio para add-item y add-item-receipt"],
+      ["--date <AAAA-MM-DD>", "Fecha del comprobante; obligatoria para add-item-receipt"],
+      ["--receipt-type <id>", "ID del tipo de comprobante; obligatorio para add-item-receipt"],
+      ["--number <valor>", "Número de comprobante; obligatorio para agregarlo o eliminarlo"],
+      [
+        "--reimbursed-amount <importe>",
+        "Obligatorio para comprobantes de gastos médicos (gastos-medicos)",
+      ],
+      [
+        "--format <text|json>",
+        "Formato de salida de list, show y tipos de comprobante (predeterminado: text)",
+      ],
     ],
     notes: [
-      "Changes require --period. Receipt dates must belong to that fiscal year.",
-      "The receipt type catalog does not accept --period.",
-      "remove-item-receipt currently supports gastos-medicos; --type defaults to that type.",
+      "Para modificar el borrador, indicá --period. Las fechas de los comprobantes deben corresponder a ese período fiscal.",
+      "El catálogo de tipos de comprobante no admite --period.",
+      "remove-item-receipt admite gastos-medicos; es el valor predeterminado de --type.",
     ],
     examples: [
-      { description: "List deductions", args: ["form", "deductions", "list", "--period=2026"] },
-      { description: "List receipt types", args: ["form", "deductions", "list-receipt-types"] },
-      { description: "Show a deduction", args: ["form", "deductions", "show", "123"] },
+      { description: "Listar deducciones", args: ["form", "deductions", "list", "--period=2026"] },
       {
-        description: "Add a monthly item",
+        description: "Listar tipos de comprobante",
+        args: ["form", "deductions", "list-receipt-types"],
+      },
+      { description: "Consultar una deducción", args: ["form", "deductions", "show", "123"] },
+      {
+        description: "Agregar un detalle mensual",
         args: [
           "form",
           "deductions",
@@ -198,7 +233,7 @@ const HELP_PAGES: Record<HelpCommand["topic"], HelpPage> = {
         ],
       },
       {
-        description: "Add a receipt to a monthly deduction",
+        description: "Agregar un comprobante a una deducción mensual",
         args: [
           "form",
           "deductions",
@@ -215,7 +250,7 @@ const HELP_PAGES: Record<HelpCommand["topic"], HelpPage> = {
         ],
       },
       {
-        description: "Add a medical expense receipt",
+        description: "Agregar un comprobante de gastos médicos",
         args: [
           "form",
           "deductions",
@@ -232,7 +267,7 @@ const HELP_PAGES: Record<HelpCommand["topic"], HelpPage> = {
         ],
       },
       {
-        description: "Remove a medical expense receipt",
+        description: "Eliminar un comprobante de gastos médicos",
         args: [
           "form",
           "deductions",
@@ -256,9 +291,9 @@ export function renderHelp(
     options.color ? `\u001b[${code}m${text}\u001b[0m` : text;
   const globals = topic === "logout" ? GLOBAL_OPTIONS.slice(0, 1) : GLOBAL_OPTIONS;
   const sections = [
-    { title: "Commands", rows: page.commands ?? [] },
-    { title: "Options", rows: page.options ?? [] },
-    { title: "Global Options", rows: globals },
+    { title: "Comandos", rows: page.commands ?? [] },
+    { title: "Opciones", rows: page.options ?? [] },
+    { title: "Opciones generales", rows: globals },
   ];
   const labelWidth = Math.max(
     ...sections.flatMap((section) => section.rows.map(([label]) => label.length)),
@@ -293,11 +328,11 @@ export function renderHelp(
     }
   }
   if (page.notes?.length) {
-    lines.push("", `  ${styled("Notes:", "38;5;245")}`);
+    lines.push("", `  ${styled("Notas:", "38;5;245")}`);
     for (const note of page.notes) append(note, 4);
   }
   if (page.examples?.length) {
-    lines.push("", `  ${styled("Examples:", "38;5;245")}`);
+    lines.push("", `  ${styled("Ejemplos:", "38;5;245")}`);
     for (const [index, example] of page.examples.entries()) {
       if (index) lines.push("");
       append(example.description, 4);

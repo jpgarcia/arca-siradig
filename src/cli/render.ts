@@ -188,7 +188,7 @@ export function printDeductions(deductions: DeductionSummary[]): void {
       console.log("");
     }
 
-    console.log(`Type: ${deduction.type}`);
+    console.log(`Tipo: ${deduction.type}`);
     console.log(`ID: ${deduction.id}`);
     console.log(`CUIT: ${deduction.cuit}`);
     console.log(`Denominación: ${deduction.name}`);

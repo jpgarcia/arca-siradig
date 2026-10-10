@@ -1,32 +1,33 @@
-# Local SiRADIG MCP
+# MCP local de SiRADIG
 
-The package exposes an MCP server through `arca-siradig mcp`, using the official
-TypeScript MCP SDK and stdio. It has no HTTP listener, remote session exchange, or hosted
-backend. `arca-siradig` without arguments still shows CLI help; existing commands keep
-their flags, output formats, and confirmation behavior.
+El paquete ofrece un servidor MCP mediante `arca-siradig mcp`, con el SDK oficial
+TypeScript de MCP y transporte stdio. Se ejecuta en tu máquina, sin servidor HTTP
+ni intercambio remoto de sesiones. `arca-siradig` sin argumentos sigue mostrando
+la ayuda; los comandos existentes conservan opciones, formatos de salida y confirmaciones.
 
-## Setup
+## Configuración
 
-MCP is available starting with version 1.1.0. Before its npm publication, use the
-[local checkout](#local-checkout) below.
+El MCP está disponible a partir de la versión 1.1.0. Hasta que se publique en npm,
+usá la configuración del [repositorio local](#repositorio-local).
 
 ```bash
 npx --yes --package=arca-siradig@1.1.0 playwright install chromium
 npx arca-siradig@1.1.0 login
 ```
 
-Configure your client to launch `npx -y arca-siradig@1.1.0 mcp`. The client owns the stdin
-and stdout pipes; running the server in a terminal by itself waits for MCP messages.
-Use the same OS user for login and the MCP, because both use
-`~/.arca-siradig/session.json`. There are no credentials in the MCP configuration.
+Configurá el cliente para ejecutar `npx -y arca-siradig@1.1.0 mcp`. El cliente
+administra stdin y stdout; si ejecutás el servidor solo en una terminal, queda
+esperando mensajes MCP. Usá el mismo usuario del sistema para iniciar sesión y
+para ejecutar el MCP: ambos usan `~/.arca-siradig/session.json`. La configuración
+MCP no contiene credenciales.
 
-The SDK supports clients using both legacy initialization and current protocol
-negotiation. A client must support local stdio servers. General web chats that only
-accept hosted connectors cannot launch this process.
+El SDK admite clientes con la inicialización anterior y con la negociación actual
+del protocolo. El cliente debe admitir servidores stdio locales. Los chats web
+que solo aceptan conectores alojados remotamente no pueden ejecutar este proceso.
 
-### Claude Desktop and JSON-based clients
+### Claude Desktop y clientes con configuración JSON
 
-Merge this entry into the existing `mcpServers` object:
+Agregá esta entrada al objeto `mcpServers` existente:
 
 ```json
 {
@@ -39,11 +40,12 @@ Merge this entry into the existing `mcpServers` object:
 }
 ```
 
-Claude Desktop's configuration is at
-`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS or
-`%APPDATA%\Claude\claude_desktop_config.json` on Windows. Restart the client after editing.
-Other clients may use different configuration locations or a UI for command and args.
-See the [official local-server guide](https://modelcontextprotocol.io/docs/develop/connect-local-servers).
+La configuración de Claude Desktop está en
+`~/Library/Application Support/Claude/claude_desktop_config.json` en macOS, o
+`%APPDATA%\Claude\claude_desktop_config.json` en Windows. Reiniciá el cliente
+cuando la modifiques. Otros clientes pueden usar otra ubicación o una interfaz
+para configurar el comando y los argumentos. Consultá la
+[guía oficial de servidores locales](https://modelcontextprotocol.io/docs/develop/connect-local-servers).
 
 ### Claude Code
 
@@ -52,8 +54,8 @@ claude mcp add --transport stdio --scope user arca-siradig -- npx -y arca-siradi
 claude mcp list
 ```
 
-`--scope user` makes the configuration available across projects for your OS user.
-See [Claude Code's MCP documentation](https://code.claude.com/docs/en/mcp).
+`--scope user` habilita la configuración en todos los proyectos de tu usuario.
+Consultá la [documentación MCP de Claude Code](https://code.claude.com/docs/en/mcp).
 
 ### Codex
 
@@ -62,7 +64,7 @@ codex mcp add arca-siradig -- npx -y arca-siradig@1.1.0 mcp
 codex mcp list
 ```
 
-Equivalent entry in `~/.codex/config.toml`:
+La configuración equivalente en `~/.codex/config.toml` es:
 
 ```toml
 [mcp_servers.arca-siradig]
@@ -72,11 +74,12 @@ startup_timeout_sec = 30
 tool_timeout_sec = 120
 ```
 
-The larger timeouts allow initial package startup and browser navigation. Codex interfaces
-that share this local configuration can use the server. This does not configure a hosted
-ChatGPT web connector. See [Codex's MCP documentation](https://learn.chatgpt.com/docs/extend/mcp?surface=cli).
+Los tiempos de espera permiten iniciar el paquete y navegar con el navegador.
+Las interfaces de Codex que comparten esta configuración local pueden usar el
+servidor. Esta configuración corresponde al MCP local, no a un conector web de
+ChatGPT. Consultá la [documentación MCP de Codex](https://learn.chatgpt.com/docs/extend/mcp?surface=cli).
 
-### Local checkout
+### Repositorio local
 
 ```bash
 npm ci
@@ -85,122 +88,135 @@ npm run build
 node dist/src/cli/index.js login
 ```
 
-Configure the client with absolute paths to your Node executable and compiled entry:
+Configurá el cliente con rutas absolutas al ejecutable Node y a la entrada compilada:
 
 ```json
 {
   "mcpServers": {
     "arca-siradig": {
-      "command": "/absolute/path/to/node",
-      "args": ["/absolute/path/to/arca-siradig/dist/src/cli/index.js", "mcp"]
+      "command": "/ruta/absoluta/a/node",
+      "args": ["/ruta/absoluta/a/arca-siradig/dist/src/cli/index.js", "mcp"]
     }
   }
 }
 ```
 
-Find your Node executable with `command -v node` on macOS/Linux or `where node` on
-Windows. Use Windows paths in the same JSON structure when appropriate. Run
-`npm run build` again after editing sources and restart the client's MCP connection.
-An existing `npm link` also exposes `arca-siradig mcp` with the same compiled entry.
+Buscá el ejecutable Node con `command -v node` en macOS/Linux o `where node` en
+Windows. En Windows, usá las rutas correspondientes dentro del mismo formato JSON.
+Volvé a ejecutar `npm run build` cuando modifiques el código y reiniciá la conexión
+MCP del cliente. Si ya usás `npm link`, también podés ejecutar `arca-siradig mcp`
+con la misma entrada compilada.
 
-## Tools
+## Herramientas
 
-Every tool returns JSON as text and `structuredContent`. Forms include the verified
-person's CUIT and the actual fiscal year. Person-selection IDs may be internal indices
-such as `0`; obtain them from `siradig_persons_list`.
+Todas las herramientas devuelven JSON como texto y en `structuredContent`. Las
+consultas de formularios incluyen el CUIT de la persona verificada y el período
+fiscal real. Los IDs de selección pueden ser índices internos, como `0`; obtenelos
+con `siradig_persons_list`. Los nombres de herramientas y campos JSON conservan sus
+identificadores en inglés; las descripciones y los mensajes usan español.
 
-| Tool | Purpose | Inputs |
+| Herramienta | Función | Parámetros |
 | --- | --- | --- |
-| `siradig_session_status` | Saved-session metadata; does not authenticate with ARCA | None |
-| `siradig_persons_list` | Representable people | None |
-| `siradig_person_select` | Persist the selected person, without changing tax data | `person` |
-| `siradig_personal_data` | Personal data | Optional `person` |
-| `siradig_employers_list` | Employers | Optional `person` |
-| `siradig_employer_show` | Employer details | `cuit`; optional `person` |
-| `siradig_form_show` | Verified person and year | Optional `person`, `period` |
-| `siradig_form_summary` | Official draft preview and totals | Optional `person`, `period` |
-| `siradig_form_print` | Official draft PDF saved locally; returns absolute path | `path`; optional `person`, `period` |
-| `siradig_deductions_list` | Deductions with IDs and provider CUITs | Optional `person`, `period` |
-| `siradig_deduction_show` | Monthly detail and receipts | `id`; optional `person`, `period` |
-| `siradig_receipt_types` | Static receipt-type IDs | None |
+| `siradig_session_status` | Metadatos de la sesión guardada; no autentica contra ARCA | Ninguno |
+| `siradig_persons_list` | Personas disponibles para representar | Ninguno |
+| `siradig_person_select` | Guardar la selección de persona sin cambiar datos fiscales | `person` |
+| `siradig_personal_data` | Datos personales | `person` opcional |
+| `siradig_employers_list` | Empleadores | `person` opcional |
+| `siradig_employer_show` | Detalle de un empleador | `cuit`; `person` opcional |
+| `siradig_form_show` | Persona y período verificados | `person` y `period` opcionales |
+| `siradig_form_summary` | Vista previa oficial y totales del borrador | `person` y `period` opcionales |
+| `siradig_form_print` | PDF oficial guardado localmente; devuelve la ruta absoluta | `path`; `person` y `period` opcionales |
+| `siradig_deductions_list` | Deducciones con IDs y CUIT de los prestadores | `person` y `period` opcionales |
+| `siradig_deduction_show` | Detalle mensual y comprobantes | `id`; `person` y `period` opcionales |
+| `siradig_receipt_types` | Catálogo estático de tipos de comprobante | Ninguno |
 
-Read tools default to the stored person and ARCA's selected year, and report the actual
-context. Pass both explicitly when inspecting a particular form. Print paths accept a
-filename or directory, use private permissions, and add numbered suffixes instead of
-overwriting files. The PDF stays on the MCP host; a chat needs separate local-file support
-to attach or open it.
+Las consultas usan la persona guardada y el período seleccionado por ARCA si no
+los indicás, y devuelven el contexto real. Indicá ambos cuando quieras consultar
+un formulario concreto.
 
-## Draft changes
+El destino del PDF puede ser un archivo o una carpeta. Los archivos tienen
+permisos privados y reciben sufijos numéricos si el nombre ya existe. El PDF
+queda en la máquina donde se ejecuta el MCP; para adjuntarlo o abrirlo, el chat
+necesita acceso a archivos locales.
 
-Append `--allow-writes` to the launch arguments to expose three additional tools:
+## Cambios en borradores
+
+Agregá `--allow-writes` a los argumentos de inicio para habilitar tres herramientas
+adicionales:
 
 ```json
 "args": ["-y", "arca-siradig@1.1.0", "mcp", "--allow-writes"]
 ```
 
-| Tool | Required fields |
+| Herramienta | Campos obligatorios |
 | --- | --- |
 | `siradig_deduction_add_monthly_item` | `person`, `period`, `deductionType`, `cuit`, `month`, `amount` |
-| `siradig_deduction_add_receipt` | Same fields plus `date`, `receiptType`, `number`; `reimbursedAmount` for `gastos-medicos` |
-| `siradig_deduction_remove_receipt` | `person`, `period`, `cuit`, `number`; medical expenses only |
+| `siradig_deduction_add_receipt` | Los anteriores más `date`, `receiptType`, `number`; `reimbursedAmount` para `gastos-medicos` |
+| `siradig_deduction_remove_receipt` | `person`, `period`, `cuit`, `number`; solo gastos médicos |
 
-The AI interprets the user's receipt attachment, reviews the extracted fields with them,
-looks up the target deduction and receipt-type ID, then passes those fields to the tool.
-Amounts are strings without thousands separators (`"1234.56"` or `"1234,56"`); dates are
-real ISO dates (`"2026-03-15"`) matching the requested month and year. CUITs contain eleven
-digits. Medical expenses require an explicit reimbursement, including `"0"`.
+La IA interpreta el comprobante adjunto, revisa los campos extraídos con el usuario,
+busca la deducción y el ID del tipo de comprobante, y pasa esos campos a la
+herramienta. Los importes son cadenas sin separadores de miles (`"1234.56"` o
+`"1234,56"`); las fechas son fechas ISO válidas (`"2026-03-15"`) que coinciden con
+el mes y año solicitados. Los CUIT contienen once dígitos. Los gastos médicos
+requieren indicar el reintegro, incluso cuando sea `"0"`.
 
-Tool annotations identify draft mutations as non-idempotent changes. `--allow-writes`
-enables those tools for the whole MCP process; it is not a per-operation human approval.
-The client controls its own tool approvals. Successful calls report
-`draft-change-attempted`; query deductions again to verify the saved result. Failures report
-uncertainty and must not be automatically retried, since a save may already have completed.
+Las anotaciones identifican los cambios como operaciones no idempotentes.
+`--allow-writes` habilita las herramientas para todo el proceso MCP; no es una
+aprobación humana por operación. El cliente administra sus propias aprobaciones.
+Las llamadas completadas informan `draft-change-attempted`: volvé a consultar las
+deducciones para verificar el resultado guardado. Si fallan, informan que el
+resultado no pudo confirmarse. No las reintentes automáticamente, porque el
+cambio podría haberse guardado.
 
-Sending a form to an employer remains a separate, explicitly confirmed CLI action:
+El envío al empleador es una acción separada del CLI, con confirmación explícita:
 
 ```bash
 npx arca-siradig@1.1.0 form submit --period 2026
 ```
 
-There is no MCP submission tool in this version. The MCP never invokes CLI prompts or
-submits a presentation while reading or changing a draft.
+Esta versión no tiene una herramienta MCP de envío. El MCP no abre preguntas del
+CLI ni envía presentaciones al consultar o modificar un borrador.
 
-## Sessions and privacy
+## Sesiones y privacidad
 
-Login stays in the terminal. The MCP has no password, cookie, or storage-state input tool.
-It reloads the stored session for each operation, so after a session expires you can log
-in again and retry a consultation without restarting the server. Session metadata reports
-`not-checked` until a real ARCA consultation validates it; file existence is not treated
-as authenticated access. Status metadata continues to report `not-checked`; each ARCA
-consultation verifies access as needed.
+El ingreso se hace desde la terminal. El MCP no tiene herramientas para recibir
+claves fiscales, cookies ni estados de sesión. Lee la sesión guardada en cada
+operación. Si vence, podés iniciar sesión de nuevo y repetir una consulta sin
+reiniciar el servidor.
 
-Operations within one server are serialized to avoid overlapping person/year selection,
-and each browser is closed after its operation. Read-only session recovery preserves the
-selected person and year and retries at most once. Draft mutations have no automatic
-retry. Serialization is per server process, not a lock across multiple clients or CLI
-processes sharing the same session.
+Los metadatos de sesión siempre informan `not-checked` (vigencia sin verificar).
+La existencia del archivo no prueba que ARCA acepte la sesión; cada consulta
+contra ARCA verifica el acceso cuando corresponde.
 
-Session files retain the CLI's private permissions. Tool responses expose the requested
-tax data to the AI client and, depending on that client's setup, its model provider. Local
-session custody does not mean that tool results stay private from the chat. Unexpected
-browser errors are replaced with safe diagnostics rather than returning raw headers,
-cookies, or portal captures.
+Las operaciones de un servidor se ejecutan en secuencia para evitar selecciones
+simultáneas de persona o año. Cada navegador se cierra después de su operación.
+La recuperación de consultas conserva persona y período y reintenta como máximo
+una vez. Las modificaciones no tienen reintentos automáticos. Esta coordinación
+aplica a un proceso, no a varios clientes o procesos CLI que compartan la sesión.
 
-## Troubleshooting
+Los archivos de sesión mantienen los permisos privados del CLI. Las respuestas
+exponen los datos fiscales solicitados al cliente de IA y, según su configuración,
+al proveedor del modelo. Aunque la sesión quede en tu máquina, los resultados
+pueden enviarse al chat. Los errores inesperados del navegador se reemplazan
+por diagnósticos seguros, sin devolver encabezados, cookies ni capturas del portal.
 
-- `SESSION_REQUIRED` or `SESSION_EXPIRED`: run `arca-siradig login` in the terminal under
-  the same OS user as the MCP, then retry the consultation.
-- `PERSON_REQUIRED` or `PERSON_NOT_FOUND`: use `siradig_persons_list`, then
-  `siradig_person_select`, or pass the listed ID/name explicitly.
-- `OPERATION_FAILED`: verify person and year with `form show --period <year>` in the CLI.
-  For visible browser diagnosis, use the CLI's `--headless false` option.
-- `DRAFT_CHANGE_UNCONFIRMED`: inspect deductions before attempting another change.
-- Missing browser executable: install Chromium using the matching package version from
-  the setup section.
-- `npx`/`node` not found: desktop apps may not inherit your shell's Node version manager
-  environment. Use absolute executable paths or the local-checkout configuration.
-- Help appears instead of tools: include `mcp` in the client's launch arguments. Bare CLI
-  behavior remains help.
+## Resolución de problemas
 
-Tests exercise protocol connections and synthetic portal HTML; they do not authenticate
-with live ARCA.
+- `SESSION_REQUIRED` o `SESSION_EXPIRED`: ejecutá `arca-siradig login` en la terminal
+  con el mismo usuario del sistema que ejecuta el MCP y volvé a hacer la consulta.
+- `PERSON_REQUIRED` o `PERSON_NOT_FOUND`: usá `siradig_persons_list` y después
+  `siradig_person_select`, o indicá explícitamente el ID o nombre de la lista.
+- `OPERATION_FAILED`: verificá persona y año con `arca-siradig form show --period <año>`.
+  Para ver qué pasa en el navegador, agregá `--headless false` al comando del CLI.
+- `DRAFT_CHANGE_UNCONFIRMED`: revisá las deducciones antes de intentar otro cambio.
+- Falta el ejecutable del navegador: instalá Chromium con la misma versión del
+  paquete que figura en la sección de configuración.
+- No se encuentra `npx` o `node`: las aplicaciones de escritorio pueden no recibir
+  el entorno del gestor de versiones de Node de tu terminal. Usá rutas absolutas
+  o la configuración del repositorio local.
+- Aparece la ayuda en lugar de las herramientas: agregá `mcp` a los argumentos de
+  inicio del cliente. El CLI sin argumentos sigue mostrando la ayuda.
+
+Las pruebas verifican conexiones del protocolo y HTML ficticio del portal; no
+inician sesión contra ARCA real.

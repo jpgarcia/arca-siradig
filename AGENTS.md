@@ -1,28 +1,30 @@
-# Agent Instructions
+# Instrucciones para agentes
 
-This project implements a TypeScript CLI for ARCA SiRADIG automation with Playwright.
-It supports consultation, draft changes and explicitly confirmed form submission.
+Este proyecto implementa un CLI en TypeScript para automatizar ARCA SiRADIG con
+Playwright. Admite consultas, cambios en borradores y envío de formularios con
+confirmación explícita. También incluye un servidor MCP local.
 
-## Principles
+## Principios
 
-- Keep scraping/navigation logic separate from interactive prompts.
-- Do not store CUIT/CUIL values, tax passwords, cookies, or storage state without an
-  explicit product decision.
-- The current product decision is to store Playwright `storageState` in
-  `~/.arca-siradig/session.json` after `arca-siradig login`; never store passwords.
-- Prefer reusable functions in `src/arca/` for future headless commands or MCP support.
-- Do not run live ARCA smoke tests unless explicitly requested.
-- Use mocked HTML in tests to validate selectors and parsers.
-- Use only fictional names, addresses, identifiers, financial amounts and receipts in fixtures.
-- Redact credentials at the login boundary and when formatting CLI errors; do not retain
-  original credential-bearing errors as causes.
-- Session files and inspection captures must have private permissions. Keep captures out
-  of Git and npm packages; they contain personal tax data.
-- Treat `scripts/inspect-live.ts` as a read-only development tool. It may navigate,
-  accept informational reminders, and capture markup, but it must not save, submit, or
-  edit data in ARCA.
+- Mantené la lógica de extracción de datos y navegación separada de las preguntas interactivas.
+- No guardes CUIT/CUIL, claves fiscales, cookies ni estados de sesión sin una decisión
+  explícita de producto.
+- La decisión actual permite guardar el `storageState` de Playwright en
+  `~/.arca-siradig/session.json` después de `arca-siradig login`; nunca guardes claves fiscales.
+- Preferí funciones reutilizables en `src/arca/` para comandos sin navegador visible y el MCP.
+- No ejecutes pruebas contra ARCA real salvo que el usuario lo pida explícitamente.
+- Usá HTML simulado en las pruebas para validar selectores y extracción de datos.
+- Usá únicamente nombres, domicilios, identificadores, importes y comprobantes ficticios
+  en los datos de prueba.
+- Ocultá las credenciales al manejar errores del ingreso y al formatear errores del CLI;
+  no conserves como causas los errores originales que contengan credenciales.
+- Los archivos de sesión y las capturas de inspección deben tener permisos privados.
+  Excluí las capturas de Git y de los paquetes npm: contienen datos fiscales personales.
+- Tratá `scripts/inspect-live.ts` como una herramienta de desarrollo de consulta.
+  Puede navegar, aceptar recordatorios informativos y capturar HTML, pero nunca
+  guardar, enviar ni editar datos en ARCA.
 
-## Expected Commands
+## Comandos de verificación
 
 ```bash
 npm run build
@@ -30,16 +32,21 @@ npm run check
 npm test
 ```
 
-## Conventions
+## Convenciones
 
-- TypeScript ESM with `.js` imports.
-- Biome for formatting and linting.
-- Headless Playwright browser for the interactive CLI by default; pass `--headless false`
-  when visible browser debugging is needed. Tests use headless Playwright.
-- Bare `arca-siradig` should show help. Use `--interactive` for the read-only interactive
-  workflow.
-- Document architecture changes in `docs/architecture.md`.
-- `npm pack` must clean/rebuild runtime output and publish only the `package.json` files
-  allowlist. Never add session state, environment files, fixtures or inspection outputs.
-- Keep project code identifiers in English. ARCA-owned labels such as `Datos Personales`
-  may remain in Spanish when they are portal text or selectors.
+- TypeScript ESM con importaciones `.js`.
+- Biome para formato y análisis estático.
+- El CLI usa Playwright sin mostrar el navegador de forma predeterminada. Usá
+  `--headless false` para depurar con el navegador visible. Las pruebas usan el navegador oculto.
+- `arca-siradig` sin argumentos debe mostrar la ayuda. Usá `--interactive` para
+  el modo interactivo de consulta.
+- Documentá los cambios de arquitectura en `docs/architecture.md`.
+- `npm pack` debe limpiar y recompilar el código de ejecución, y publicar únicamente
+  la lista de archivos permitidos de `package.json`. Nunca agregues estados de sesión,
+  archivos de entorno, datos de prueba ni capturas de inspección.
+- Mantené los identificadores del código, comandos, opciones y campos JSON en inglés.
+  Las etiquetas de ARCA, como `Datos Personales`, conservan el texto del portal cuando
+  se usan como contenido o selectores.
+- Escribí la documentación, las ayudas y los mensajes al usuario en español de Argentina,
+  con voseo: «Ingresá», «Elegí», «Revisá». Conservá los nombres técnicos que forman
+  parte de la interfaz pública.

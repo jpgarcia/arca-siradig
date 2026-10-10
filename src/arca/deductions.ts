@@ -286,7 +286,7 @@ export async function addDeductionReceiptItemOnOpenPage(
 
   if ((await monthRow.count()) === 0) {
     throw new Error(
-      `No se encontró el detalle mensual para el mes ${options.month}. Agregalo primero con arca-siradig form deductions add-item --period <YYYY> usando el mismo tipo, CUIT y mes.`,
+      `No se encontró el detalle mensual para el mes ${options.month}. Agregalo primero con arca-siradig form deductions add-item --period <AAAA> usando el mismo tipo, CUIT y mes.`,
     );
   }
 
@@ -828,7 +828,7 @@ function formatMonthLabel(month: number): string {
 function formatIsoDate(value: string): string {
   const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) {
-    throw new Error(`La fecha "${value}" debe tener formato YYYY-MM-DD.`);
+    throw new Error(`La fecha "${value}" debe tener formato AAAA-MM-DD.`);
   }
 
   const [, year, month, day] = match;
@@ -876,7 +876,7 @@ function normalizeReceiptNumberForComparison(value: string): string {
 
 function readRequiredOption(value: string | undefined, optionName: string): string {
   if (!value || value.trim().length === 0) {
-    throw new Error(`${optionName} is required.`);
+    throw new Error(`${optionName} es obligatorio.`);
   }
 
   return value.trim();
@@ -897,7 +897,7 @@ async function waitForCondition(
     await new Promise((resolve) => setTimeout(resolve, intervalMs));
   }
 
-  throw new Error("Timed out waiting for ARCA page state.");
+  throw new Error("Se agotó el tiempo de espera de la pantalla de ARCA.");
 }
 
 async function expectVisible(page: Page, selector: string): Promise<void> {

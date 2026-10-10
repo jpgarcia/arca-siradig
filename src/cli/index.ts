@@ -159,7 +159,7 @@ async function runLogin(
   if (!command.hasExplicitCredentials) {
     const currentSession = await store.read();
     if (currentSession && (await canListPersons(command.headless, currentSession.storageState))) {
-      console.log(`Ya estás logueado con CUIT/CUIL ${currentSession.cuit}.`);
+      console.log(`Ya tenés una sesión iniciada con CUIT/CUIL ${currentSession.cuit}.`);
       return;
     }
   }
@@ -486,7 +486,7 @@ async function runFormPreview(
     if (!(await navigateWithSessionRefresh(session, store, cuit, openFormPreview, context))) return;
     await verifyFormContext(session.page, { period: context.period, person: context.person.id });
     if (command.kind === "form-print") {
-      if (!command.path) throw new Error("--path is required.");
+      if (!command.path) throw new Error("--path es obligatorio.");
       const savedPath = await printFormDraft(session.page, command.path, context.period);
       printFormContext(context);
       console.log(`Borrador guardado en: ${savedPath}`);
@@ -808,7 +808,7 @@ async function runFormDeductionsRemoveItemReceipt(
     });
 
     if (command.deductionType !== "gastos-medicos") {
-      throw new Error(`remove-item-receipt does not support type ${command.deductionType}.`);
+      throw new Error(`remove-item-receipt no admite el tipo ${command.deductionType}.`);
     }
 
     await verifyFormContext(session.page, {
@@ -943,7 +943,7 @@ async function runInteractive(
 
     const persons = await listPersons(siradigPage);
     if (persons.length === 0) {
-      throw new Error("No people were found to manage.");
+      throw new Error("No se encontraron personas para representar.");
     }
 
     const selectedPerson = await promptPerson(persons);
@@ -954,7 +954,7 @@ async function runInteractive(
     while (true) {
       const menuItems = await listMenuItems(siradigPage);
       if (menuItems.length === 0) {
-        throw new Error("No actions were found in the main menu.");
+        throw new Error("No se encontraron acciones en el menú principal.");
       }
 
       const selectedMenuItem = await promptMenuItem(menuItems);
@@ -995,7 +995,7 @@ async function promptAndLogin(page: Parameters<typeof loginToArca>[0]): Promise<
       }
 
       console.error(`\nARCA rechazó las credenciales: ${error.message}`);
-      console.error("Intentá nuevamente.\n");
+      console.error("Volvé a intentar.\n");
       usePasswordDefault = false;
     }
   }

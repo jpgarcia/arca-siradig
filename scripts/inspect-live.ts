@@ -25,14 +25,14 @@ async function main(): Promise<void> {
   const password = process.env.ARCA_PASSWORD;
 
   if (!cuit || !password) {
-    throw new Error("Missing ARCA_CUIT or ARCA_PASSWORD in .env.");
+    throw new Error("Falta ARCA_CUIT o ARCA_PASSWORD en .env.");
   }
 
   const outputDir = await mkdtemp(join(tmpdir(), "arca-siradig-inspection-"));
   await chmod(outputDir, 0o700);
-  console.log(`Private inspection directory: ${outputDir}`);
+  console.log(`Carpeta privada de inspección: ${outputDir}`);
   console.log(
-    "Captures contain personal tax data. Keep them private; use synthetic test fixtures.",
+    "Las capturas contienen datos fiscales personales. Mantenelas privadas y usá datos ficticios en las pruebas.",
   );
 
   const browser = await chromium.launch({ headless: false });
@@ -51,7 +51,9 @@ async function main(): Promise<void> {
     const personButtons = siradigPage.locator('input[type="button"].btn_empresa');
     const personCount = await personButtons.count();
     if (personCount === 0) {
-      throw new Error("No .btn_empresa buttons were found on the person selection page.");
+      throw new Error(
+        "No se encontraron botones .btn_empresa en la pantalla de selección de persona.",
+      );
     }
 
     await personButtons.first().click();
@@ -111,7 +113,7 @@ async function main(): Promise<void> {
     await browser.close();
   }
 
-  console.log(`Sensitive inspection saved to ${outputDir}`);
+  console.log(`Capturas con datos sensibles guardadas en ${outputDir}`);
 }
 
 async function maybeAcceptReminder(page: Page): Promise<void> {

@@ -1,24 +1,25 @@
 # ARCA SiRADIG CLI
 
-CLI for signing in to ARCA and managing **SiRADIG - Trabajador** Form 572 drafts:
-inspect personal data, employers and deductions; add or remove supported receipts;
-preview, print and submit a form to the employer.
+CLI para iniciar sesión en ARCA y gestionar borradores del Formulario 572 de
+**SiRADIG - Trabajador**: consultar datos personales, empleadores y deducciones;
+agregar o eliminar comprobantes admitidos; ver el resumen, imprimir y enviar el
+formulario al empleador.
 
-The same package includes a local MCP server for AI clients that support **stdio**, such
-as Claude Desktop, Claude Code, and Codex. The existing CLI commands and default help
-behavior remain available.
+El mismo paquete incluye un servidor MCP local para clientes de IA compatibles con
+**stdio**, como Claude Desktop, Claude Code y Codex. Los comandos existentes del CLI
+siguen disponibles y, si lo ejecutás sin argumentos, muestra la ayuda.
 
-## Installation
+## Instalación
 
-Use Node.js 20.17+ (20.x), 22.13+ (22.x), or 23.5+. Run the published CLI with
-`npx`:
+Usá Node.js 20.17 o superior de la rama 20.x, 22.13 o superior de la rama 22.x, o
+23.5 o superior. Podés ejecutar el CLI publicado con `npx`:
 
 ```bash
 npx arca-siradig --help
 ```
 
-Before the first login, install the Chromium version required by the CLI's Playwright
-dependency. The browser is cached for subsequent commands:
+Antes de iniciar sesión por primera vez, instalá la versión de Chromium que requiere
+la dependencia Playwright del CLI. El navegador queda en caché para los próximos comandos:
 
 ```bash
 npx --yes --package=arca-siradig playwright install chromium
@@ -26,14 +27,14 @@ npx arca-siradig login
 npx arca-siradig form summary --period 2026
 ```
 
-Alternatively, install the command globally:
+También podés instalar el comando de forma global:
 
 ```bash
 npm install --global arca-siradig
 arca-siradig --help
 ```
 
-For development from a local checkout:
+Para trabajar desde el repositorio local:
 
 ```bash
 npm ci
@@ -41,33 +42,34 @@ npx playwright install chromium
 npm run build
 ```
 
-Optionally create a local `.env` file:
+Si querés, creá un archivo `.env` local:
 
 ```bash
-ARCA_CUIT=<your-cuit-or-cuil>
-ARCA_PASSWORD=<your-tax-password>
+ARCA_CUIT=<tu-cuit-o-cuil>
+ARCA_PASSWORD=<tu-clave-fiscal>
 ```
 
-`.env` and its local variants are ignored by Git; `.env.example` contains empty defaults.
-The CLI uses populated values as prompt defaults; the password is masked and can be
-accepted by pressing `enter`. Prefer the interactive password prompt. If you create a
-populated `.env`, keep it private (for example, `chmod 600 .env` on macOS/Linux).
+Git ignora `.env` y sus variantes locales; `.env.example` contiene valores vacíos.
+El CLI usa los valores configurados como predeterminados al pedir las credenciales.
+La clave se muestra oculta y podés usarla presionando Enter. Preferí ingresarla
+cuando el CLI te la pida. Si guardás credenciales en `.env`, mantené el archivo
+privado; por ejemplo, con `chmod 600 .env` en macOS/Linux.
 
-## Local MCP for AI clients
+## MCP local para clientes de IA
 
-MCP support starts in **1.1.0**. If that release is not yet available on npm, use the
-local-checkout configuration in [the MCP guide](docs/mcp.md#local-checkout).
+El soporte MCP comienza en la versión **1.1.0**. Si todavía no está publicada en npm,
+usá la configuración del [repositorio local de la guía MCP](docs/mcp.md#repositorio-local).
 
-Install Chromium and sign in **in your terminal**, under the same OS user that runs the
-AI client. The chat never needs your tax password:
+Instalá Chromium e iniciá sesión **desde tu terminal**, con el mismo usuario del
+sistema que ejecuta el cliente de IA. El chat no necesita tu clave fiscal:
 
 ```bash
 npx --yes --package=arca-siradig@1.1.0 playwright install chromium
 npx arca-siradig@1.1.0 login
 ```
 
-For Claude Desktop and other clients that accept `mcpServers` JSON, merge this entry into
-their MCP configuration, then restart the client:
+Para Claude Desktop y otros clientes que aceptan un objeto JSON `mcpServers`, agregá
+esta entrada a su configuración MCP y reiniciá el cliente:
 
 ```json
 {
@@ -80,43 +82,47 @@ their MCP configuration, then restart the client:
 }
 ```
 
-For Claude Code:
+Para Claude Code:
 
 ```bash
 claude mcp add --transport stdio --scope user arca-siradig -- npx -y arca-siradig@1.1.0 mcp
 ```
 
-For Codex:
+Para Codex:
 
 ```bash
 codex mcp add arca-siradig -- npx -y arca-siradig@1.1.0 mcp
 ```
 
-The default server supports consultations, person selection, draft summaries, and PDF
-downloads. Add `--allow-writes` after `mcp` to enable supported draft changes and receipt
-uploads. Changes require explicit person and fiscal year. Submission to the employer
-continues through the CLI's existing confirmation flow.
+El servidor permite consultar datos, seleccionar una persona, obtener el resumen
+del borrador y descargar su PDF. Agregá `--allow-writes` después de `mcp` para
+habilitar los cambios admitidos en borradores y la carga de comprobantes. Las
+modificaciones requieren indicar la persona y el período fiscal. El envío al
+empleador sigue usando la confirmación del CLI.
 
-Example request: “Show my SiRADIG draft for 2026 and its deductions. Review the fields of
-this receipt with me before adding it.” The AI client interprets attachments; the MCP
-accepts their structured fields, not raw documents.
+Ejemplo de pedido: «Mostrame mi borrador de SiRADIG de 2026 y sus deducciones.
+Revisemos los campos de este comprobante antes de cargarlo». El cliente de IA
+interpreta los adjuntos; el MCP recibe sus campos estructurados, no los documentos originales.
 
-This integration requires a client that can launch a local stdio process. A web chat
-without local MCP support cannot connect to it. Sessions stay on your machine, while the
-requested tax data returned by tools becomes visible to your AI client and its provider.
+Esta integración requiere un cliente que pueda ejecutar un proceso stdio local.
+Un chat web sin soporte MCP local no puede conectarse. Las sesiones quedan en tu
+máquina; los datos fiscales devueltos por las herramientas son visibles para el
+cliente de IA y su proveedor.
 
-See [the MCP guide](docs/mcp.md) for the full tool catalog, local development, and setup
-troubleshooting. Configuration examples follow the official guides for
+Consultá la [guía MCP](docs/mcp.md) para ver el catálogo de herramientas, la
+configuración desde el repositorio y cómo resolver problemas. Los ejemplos siguen
+las guías oficiales de
 [Claude Desktop](https://modelcontextprotocol.io/docs/develop/connect-local-servers),
-[Claude Code](https://code.claude.com/docs/en/mcp), and
+[Claude Code](https://code.claude.com/docs/en/mcp) y
 [Codex](https://learn.chatgpt.com/docs/extend/mcp?surface=cli).
 
-## Usage
+## Uso
 
-Examples below use `arca-siradig` directly after a global installation or local link.
-When using `npx`, prefix each command with `npx`.
+Los ejemplos usan `arca-siradig` directamente, después de una instalación global o
+un enlace local. Si lo ejecutás con `npx`, agregá `npx` al comienzo de cada comando.
 
-To make a local checkout available as a command outside its folder, build it and link it:
+Para usar el repositorio local como un comando desde cualquier carpeta, compilalo
+y creá el enlace:
 
 ```bash
 npm run build
@@ -124,19 +130,21 @@ npm link
 arca-siradig --help
 ```
 
-This links the local package without publishing it to npm. Run `npm run build` again after
-changing the TypeScript sources. A local assistant with terminal access can invoke this
-command and reuse the session created by `arca-siradig login` under the same OS user.
-Use `--format=json` for supported read commands. The CLI accepts structured receipt fields
-through `form deductions add-item-receipt`; it does not extract fields from PDF or image files.
-An assistant must interpret the document before calling that command.
+Esto enlaza el paquete local sin publicarlo en npm. Volvé a ejecutar `npm run build`
+cuando modifiques el código TypeScript. Un asistente local con acceso a la terminal
+puede ejecutar el comando y usar la sesión creada por `arca-siradig login`, siempre
+que se ejecute con el mismo usuario del sistema.
+
+Usá `--format=json` en las consultas que lo admiten. El CLI recibe campos
+estructurados de comprobantes mediante `form deductions add-item-receipt`; el
+asistente debe interpretar el PDF o la imagen antes de ejecutar ese comando.
 
 ```bash
 npm run arca-siradig
 ```
 
-This prints help by default. Append `--help` to a command or subcommand to see its options,
-without signing in or executing the command:
+Sin argumentos, el CLI muestra la ayuda. Agregá `--help` a un comando o subcomando
+para ver sus opciones, sin iniciar sesión ni ejecutar la acción:
 
 ```bash
 arca-siradig login --help
@@ -144,86 +152,93 @@ arca-siradig employees show --help
 arca-siradig form deductions --help
 ```
 
-Playwright runs headless by default. To log in with a visible browser, pass:
+Playwright se ejecuta sin mostrar el navegador de forma predeterminada. Para iniciar
+sesión con el navegador visible:
 
 ```bash
 npm run arca-siradig -- login --headless false
 ```
 
-## Commands
+## Comandos
+
+Los nombres de comandos, opciones y campos JSON se mantienen en inglés para
+conservar la compatibilidad. La documentación, las ayudas y los mensajes propios
+del proyecto usan español de Argentina.
 
 ```bash
 npm run arca-siradig -- login
 npm run arca-siradig -- logout
 npm run arca-siradig -- persons list
-npm run arca-siradig -- persons select <id|name>
+npm run arca-siradig -- persons select <id|nombre>
 npm run arca-siradig -- persons list --format=json
-npm run arca-siradig -- personal-data show [--person "<id|name>"]
-npm run arca-siradig -- employees list [--person "<id|name>"]
-npm run arca-siradig -- employees show [--person "<id|name>"] --employee-cuit <cuit>
-npm run arca-siradig -- form deductions list [--person "<id|name>"]
+npm run arca-siradig -- personal-data show [--person "<id|nombre>"]
+npm run arca-siradig -- employees list [--person "<id|nombre>"]
+npm run arca-siradig -- employees show [--person "<id|nombre>"] --employee-cuit <cuit>
+npm run arca-siradig -- form deductions list [--person "<id|nombre>"]
 npm run arca-siradig -- form deductions list-receipt-types
-npm run arca-siradig -- form deductions show <id> [--person "<id|name>"]
-npm run arca-siradig -- form deductions add-item --period=<YYYY> --type=<type> --cuit=<provider-cuit> --month=<1-12> --amount=<amount>
-npm run arca-siradig -- form deductions add-item-receipt --period=<YYYY> --type=<type> --cuit=<provider-cuit> --month=<1-12> --amount=<amount> --receipt-type=<id> --date=<YYYY-MM-DD> --number=<number>
-npm run arca-siradig -- form deductions add-item-receipt --period=<YYYY> --type=gastos-medicos --cuit=<provider-cuit> --month=<1-12> --amount=<amount> --reimbursed-amount=<amount> --receipt-type=<id> --date=<YYYY-MM-DD> --number=<number>
-npm run arca-siradig -- form deductions remove-item-receipt --period=<YYYY> --cuit=<provider-cuit> --number=<number>
+npm run arca-siradig -- form deductions show <id> [--person "<id|nombre>"]
+npm run arca-siradig -- form deductions add-item --period=<AAAA> --type=<tipo> --cuit=<cuit-del-prestador> --month=<1-12> --amount=<importe>
+npm run arca-siradig -- form deductions add-item-receipt --period=<AAAA> --type=<tipo> --cuit=<cuit-del-prestador> --month=<1-12> --amount=<importe> --receipt-type=<id> --date=<AAAA-MM-DD> --number=<número>
+npm run arca-siradig -- form deductions add-item-receipt --period=<AAAA> --type=gastos-medicos --cuit=<cuit-del-prestador> --month=<1-12> --amount=<importe> --reimbursed-amount=<importe> --receipt-type=<id> --date=<AAAA-MM-DD> --number=<número>
+npm run arca-siradig -- form deductions remove-item-receipt --period=<AAAA> --cuit=<cuit-del-prestador> --number=<número>
 npm run arca-siradig -- --interactive
 ```
 
-`login` prompts for missing CUIT/CUIL or password values. After a successful login, the CLI
-stores Playwright session state in `~/.arca-siradig/session.json` and never stores the
-password. It also selects the first available SiRADIG person automatically and stores that
-selection. If no people are listed, the CLI keeps the session but asks you to add a person in
-ARCA before continuing.
+`login` pide el CUIT/CUIL y la clave fiscal si faltan. Una vez iniciada la sesión,
+guarda el estado de Playwright en `~/.arca-siradig/session.json`; nunca guarda la
+clave fiscal. También selecciona automáticamente la primera persona disponible en
+SiRADIG y guarda esa selección. Si no hay personas disponibles, conserva la sesión
+y te indica que cargues una persona en ARCA antes de continuar.
 
-`--cuit` and `--password` are available for automation, but password arguments can be
-recorded in shell history and exposed in process listings. Use the prompt for manual login.
+Las opciones `--cuit` y `--password` están disponibles para automatizar el ingreso.
+Los argumentos con la clave pueden quedar en el historial de la terminal o en la
+lista de procesos. Para iniciar sesión a mano, ingresá la clave cuando el CLI te la pida.
 
-Login uses the SiRADIG fiscal-key entry linked from `https://www.afip.gob.ar/572web/`
-(`login.xhtml?action=SYSTEM&system=radig`). If authentication opens SiRADIG directly,
-the CLI skips the portal service selector. Portal navigation remains a fallback.
+El ingreso usa el enlace con clave fiscal a SiRADIG publicado en
+`https://www.afip.gob.ar/572web/` (`login.xhtml?action=SYSTEM&system=radig`). Si la
+autenticación abre SiRADIG directamente, el CLI continúa allí. Si abre el portal de
+servicios, busca SiRADIG en ese portal.
 
-`logout` removes the stored session file.
+`logout` elimina el archivo de sesión guardado.
 
-`persons list` reuses the stored session. If there is no session or ARCA has expired it, run
-`arca-siradig login` again. The default output format is text; pass `--format=json` for JSON.
+`persons list` usa la sesión guardada. Si no existe o venció en ARCA, volvé a ejecutar
+`arca-siradig login`. La salida predeterminada es texto; usá `--format=json` para
+obtener JSON.
 
-`persons select` accepts either the person id or the person name shown by `persons list`.
+`persons select` acepta el ID o nombre que aparece en `persons list`.
 
-`personal-data show`, `employees list`, `employees show`, `form deductions list`, and
-`form deductions show` reuse the stored session and will use the stored selected person when
-available. You can still pass `--person` to override it. All five commands support
-`--format=text|json`.
+`personal-data show`, `employees list`, `employees show`, `form deductions list` y
+`form deductions show` usan la sesión y la persona seleccionada. Podés indicar
+otra persona con `--person`. Los cinco comandos admiten `--format=text|json`.
 
-`employees list` and `form deductions list` first read the portal's embedded JSON through
-authenticated HTTP requests, reducing browser navigation. The employer lookup for
-`employees show` uses the same path. If ARCA changes the response or the session expires,
-the CLI falls back to its browser flow. Login and person selection still use Playwright.
+`employees list` y `form deductions list` consultan primero el JSON incluido en las
+páginas del portal mediante solicitudes HTTP autenticadas. `employees show` usa el
+mismo mecanismo para buscar el empleador. Esto reduce la navegación del navegador.
+Si ARCA cambia la respuesta o la sesión vence, el CLI usa la navegación con
+Playwright. El ingreso y la selección de persona siguen usando el navegador.
 
-`form deductions list-receipt-types` prints the hardcoded `cmpTipo` catalog used by the
-portal. Text output shows an `ID`/`Tipo` table and JSON output returns `{ id, name }`
-objects.
+`form deductions list-receipt-types` muestra el catálogo fijo `cmpTipo` del portal.
+La salida de texto es una tabla `ID`/`Tipo`; la salida JSON contiene objetos `{ id, name }`.
 
-`form deductions show <id>` first resolves the item from the grouped deductions list, then
-opens the read-only detail page for that exact record. Text output mirrors the web view with
-entity, period, monthly detail, and receipts sections. JSON output is structured in English
-with normalized months, amounts, receipt dates, and numeric receipt type ids.
+`form deductions show <id>` busca la deducción en la lista agrupada y abre el detalle
+del registro en modo de consulta. La salida de texto refleja la pantalla de ARCA,
+con entidad, período, detalle mensual y comprobantes. El JSON conserva campos en
+inglés, con meses, importes y fechas normalizados e IDs numéricos de tipos de comprobante.
 
-`form deductions add-item` and `form deductions add-item-receipt` identify the target deduction by
-provider CUIT plus deduction type. For monthly-detail deductions, use the type shown by
-`form deductions list` and the provider CUIT shown in the same row.
+`form deductions add-item` y `form deductions add-item-receipt` identifican la
+deducción por tipo y CUIT del prestador. Para deducciones con detalle mensual, usá
+el tipo y CUIT que aparecen en la misma fila de `form deductions list`.
 
-`form deductions add-item-receipt --type=gastos-medicos` loads a medical expense receipt by
-provider CUIT and month. If the same provider/month already exists in `form deductions list`, the
-CLI opens that item; otherwise it opens `verGastosMedicos.do`, fills the provider CUIT,
-selects the month, adds the receipt, and saves the draft.
+`form deductions add-item-receipt --type=gastos-medicos` carga un comprobante por
+CUIT del prestador y mes. Si ya existe un registro para ese prestador y mes, lo abre;
+si no, abre `verGastosMedicos.do`, completa el CUIT, selecciona el mes, agrega el
+comprobante y guarda el borrador.
 
-`form deductions remove-item-receipt` currently removes `gastos-medicos` receipts by provider
-CUIT and receipt number. It searches all matching provider entries, removes the matching
-receipt row, and saves the draft.
+`form deductions remove-item-receipt` elimina comprobantes de `gastos-medicos` por
+CUIT del prestador y número. Revisa todos los registros de ese prestador, elimina
+la fila del comprobante que coincide y guarda el borrador.
 
-## Fiscal Forms
+## Formularios fiscales
 
 ```bash
 arca-siradig form show --period 2026 --format=json
@@ -234,37 +249,42 @@ arca-siradig form print --period 2026 --path ./f572-2026.pdf
 arca-siradig form print --period 2026 --path ./
 ```
 
-All form commands accept `--person <id|name>` and otherwise use the stored selected person.
-Read commands may omit `--period`: they report the fiscal year actually selected by ARCA,
-without assuming that it is the latest year. An explicit period is selected through the
-worker entry and verified against the portal breadcrumb; unavailable periods fail.
-These commands access the current form draft, not historical submitted versions.
+Todos los comandos de formularios admiten `--person <id|nombre>` y, si lo omitís,
+usan la persona guardada. Las consultas pueden omitir `--period`: informan el
+período fiscal que ARCA tiene seleccionado, sin asumir que sea el último. Si
+indicás un período, el CLI lo selecciona desde el ingreso de Trabajador y verifica
+el año en la ruta de navegación visible del portal. Si el período no está disponible,
+la consulta falla. Estos comandos acceden al borrador actual del formulario; las
+presentaciones históricas tienen un flujo separado.
 
-`form show` reports person and period. `form summary` reads the official HTML draft preview,
-including presentation character, withholding agent, section tables, and the totals displayed
-by ARCA. It preserves ARCA's amounts and labels without recalculating tax or deductible limits.
-The console summary highlights official totals and groups monthly amounts by category and
-provider. Empty sections are condensed rather than printing their empty table headers.
-Colors are enabled for terminals and disabled for redirected output or `NO_COLOR`.
+`form show` informa persona y período. `form summary` lee la vista previa HTML
+oficial del borrador: carácter de la presentación, agente de retención, tablas de
+las secciones y totales informados por ARCA. Conserva los importes y etiquetas del
+portal sin recalcular impuestos ni topes deducibles. El resumen en consola destaca
+los totales y agrupa importes mensuales por categoría y prestador. Las secciones
+vacías se muestran de forma compacta. Los colores se habilitan en terminales y se
+desactivan si redirigís la salida o configurás `NO_COLOR`.
 
-`form print` uses the official **Imprimir Borrador** download and validates that it is a PDF.
-`--path` accepts a PDF filename or a directory (`./`, an existing directory, a path ending
-in `/`, or a new path without an extension). Directories use `f572-<year>-borrador.pdf`.
-Parent directories are created as needed. Existing names receive ` (1)`, ` (2)`, etc.
-before the extension, including explicit filenames. Files use private permissions and are
-never overwritten; the CLI always prints the absolute path of the saved file.
+`form print` usa la descarga oficial **Imprimir Borrador** y valida que el archivo
+sea un PDF. `--path` acepta un nombre de archivo PDF o una carpeta: `./`, una
+carpeta existente, una ruta terminada en `/` o una ruta nueva sin extensión. Para
+carpetas, el nombre predeterminado es `f572-<año>-borrador.pdf`. Crea las carpetas
+necesarias y agrega ` (1)`, ` (2)`, etc. antes de la extensión si el nombre ya
+existe, incluso cuando indicás un archivo explícito. Los archivos tienen permisos
+privados y no se sobrescriben. El CLI siempre informa la ruta absoluta del archivo guardado.
 
-Changes (`add-item`, `add-item-receipt`, `remove-item-receipt`) require `--period`.
-Receipt dates must belong to that year. The CLI verifies the represented
-person and fiscal year before changing a form. Session refresh restores this context for
-form reads before retrying navigation.
+Los cambios (`add-item`, `add-item-receipt`, `remove-item-receipt`) requieren
+`--period`. La fecha del comprobante debe corresponder a ese año. El CLI verifica
+persona y período antes de modificar un formulario. Si recupera una sesión durante
+una consulta, restaura ambos antes de volver a navegar.
 
-`form deductions list` JSON is `{ period, person: { id, name }, deductions: [...] }`;
-detail JSON is
-`{ period, person: { id, name }, deduction: {...} }`. Text output includes person and year.
-The static receipt-type catalog retains its existing output and does not accept a period.
+El JSON de `form deductions list` tiene la forma
+`{ period, person: { id, name }, deductions: [...] }`; el detalle usa
+`{ period, person: { id, name }, deduction: {...} }`. La salida de texto incluye
+persona y año. El catálogo estático de tipos de comprobante conserva su salida y
+no acepta un período.
 
-### Submit to the employer
+### Envío al empleador
 
 ```bash
 arca-siradig form submit --period 2026
@@ -272,50 +292,56 @@ arca-siradig form submit --period 2026 --aceptar
 arca-siradig form submit --period 2026 --aceptar --format=json
 ```
 
-`form submit` shows the official draft summary, opens ARCA's confirmation dialog, and asks
-**Aceptar — Generar Presentación** or **Cancelar** in the terminal. Cancel is the default;
-interrupting the prompt also cancels. `--aceptar` skips the terminal question and confirms
-**Generar Presentación** directly. Submission always requires `--period` and supports
-`--person`. Without a terminal, `--aceptar` is required.
+`form submit` muestra el resumen oficial del borrador, abre la confirmación de ARCA
+y te pide elegir **Aceptar — Generar Presentación** o **Cancelar** desde la terminal.
+La opción predeterminada es cancelar; si interrumpís la pregunta, también cancela.
+`--aceptar` omite esa pregunta y confirma **Generar Presentación** directamente.
+El envío siempre requiere `--period` y admite `--person`. Si no hay una terminal
+interactiva, requiere `--aceptar`.
 
-The CLI verifies person and year again immediately before the final click and never retries
-that click automatically. Results report `submitted`, `cancelled`, `rejected`, or
-`unconfirmed`. Success requires a positive acknowledgement or a newly registered
-presentation. When that wording is unknown, the CLI checks **Consulta de Formularios Enviados**
-against a snapshot taken immediately before the final click. It verifies person and
-period and requires exactly one new record with the next presentation number; a
-presentation already present before the attempt never confirms success. A confirmed
-history result includes the presentation number, description, and sending date.
-If neither check can confirm the result, inspect that history in ARCA before trying
-again. The message includes the final screen URL without query parameters and the
-reason history could not confirm the attempt. Rejected or unconfirmed results exit with code 1.
-The summary and prompt use stderr so JSON results remain a single stdout object.
+El CLI vuelve a verificar persona y año justo antes del clic final y nunca lo
+reintenta automáticamente. El resultado usa los estados `submitted` (enviado),
+`cancelled` (cancelado), `rejected` (rechazado) o `unconfirmed` (sin confirmar).
+Para confirmar el éxito, requiere un mensaje positivo de ARCA o una presentación
+nueva registrada en el historial.
 
-Confirmation and result handling have been tested with mocked HTML. Read-only live
-inspection confirmed the history structure after a user-initiated CLI submission;
-development did not generate another live presentation.
+Si no reconoce el mensaje final, consulta **Consulta de Formularios Enviados** y
+compara con una captura en memoria tomada justo antes del clic. Verifica persona
+y período y exige un único registro nuevo con el número de presentación siguiente.
+Una presentación que ya existía nunca confirma el envío. La confirmación por
+historial incluye número, descripción y fecha de envío.
 
-## Interactive Flow
+Si ninguno de los mecanismos confirma el resultado, revisá ese historial en ARCA
+antes de volver a enviar. El mensaje incluye la URL final sin parámetros y el
+motivo por el que el historial no pudo confirmar el intento. Los resultados
+rechazados o sin confirmar terminan con código 1. El resumen y la pregunta se
+escriben en stderr para que el resultado JSON sea un único objeto en stdout.
 
-Run the current read-only interactive flow with:
+La confirmación y el resultado se prueban con HTML simulado. Una inspección en
+modo de consulta verificó el historial después de un envío realizado por el
+usuario con el CLI; durante el desarrollo no se generó otra presentación real.
+
+## Modo interactivo
+
+Ejecutá el modo interactivo de consulta con:
 
 ```bash
 npm run arca-siradig -- --interactive
 ```
 
-The flow:
+El flujo:
 
-1. Prompts for CUIT/CUIL and tax password.
-2. Signs in to ARCA.
-3. Prompts again if ARCA rejects the credentials.
-4. Opens the `SiRADIG - Trabajador` service.
-5. Automatically accepts the draft reminder if it appears.
-6. Lists the people available to represent.
-7. Selects the person for the current browser session; interactive mode does not persist it.
-8. Shows the main menu with all actions disabled except `Datos Personales`.
-9. Shows personal data grouped by section.
+1. Pide CUIT/CUIL y clave fiscal.
+2. Inicia sesión en ARCA.
+3. Vuelve a pedir las credenciales si ARCA las rechaza.
+4. Abre el servicio `SiRADIG - Trabajador`.
+5. Acepta automáticamente el recordatorio sobre borradores si aparece.
+6. Lista las personas disponibles para representar.
+7. Selecciona una persona para esa sesión del navegador; no guarda la selección.
+8. Muestra el menú principal con las acciones deshabilitadas salvo `Datos Personales`.
+9. Muestra los datos personales agrupados por sección.
 
-## Scripts
+## Comandos de desarrollo
 
 ```bash
 npm run build
@@ -324,50 +350,59 @@ npm run format
 npm test
 ```
 
-## Development Inspection
+## Inspección durante el desarrollo
 
-For portal markup changes or new read-only features, use:
+Para investigar cambios en el HTML del portal o nuevas funciones de consulta, usá:
 
 ```bash
 npx tsx scripts/inspect-live.ts
 ```
 
-This opens visible Chromium, uses credentials from `.env`, navigates read-only through the
-worker flow, and writes HTML summaries and screenshots to a randomly named directory under
-the OS temporary directory. The path is printed even if inspection fails. On macOS/Linux,
-the directory has mode `0700` and files have mode `0600` from creation.
-Captures include personal tax data; keep them private, remove them when finished, and build
-test fixtures from synthetic data instead of copying captured responses.
+La herramienta abre Chromium visible, usa las credenciales de `.env`, recorre el
+flujo de Trabajador en modo de consulta y guarda resúmenes HTML y capturas en una
+carpeta con nombre aleatorio dentro del directorio temporal del sistema. Informa
+la ruta aunque la inspección falle. En macOS/Linux, la carpeta se crea con permisos
+`0700` y los archivos con `0600`.
 
-## V1 Limitations
+Las capturas incluyen datos fiscales personales. Mantenelas privadas, eliminalas
+cuando termines y usá datos ficticios en las pruebas en lugar de copiar respuestas
+reales. Ejecutá inspecciones contra ARCA únicamente cuando el usuario lo solicite.
 
-- Writes support monthly deduction items and receipts; medical expense receipts also support removal.
-- `form submit` sends a presentation to the employer after confirmation, or with `--aceptar`.
-- Only `Datos Personales` is enabled in the interactive menu.
-- Tests are offline with mocked HTML; they do not run a live ARCA sign-in.
-- `logout` only removes the stored session; it does not close browser sessions that are already open.
+## Limitaciones
 
-## Privacy and Packaging
+- Las modificaciones admiten detalles mensuales y comprobantes; los comprobantes
+  de gastos médicos también se pueden eliminar.
+- `form submit` envía la presentación al empleador después de confirmar, o con `--aceptar`.
+- El menú interactivo solo tiene habilitada la opción `Datos Personales`.
+- Las pruebas usan HTML simulado y no inician sesión en ARCA real.
+- `logout` elimina la sesión guardada; las sesiones de navegador que ya están
+  abiertas siguen activas.
 
-The session file contains CUIT/CUIL, the person selection and authenticated browser state.
-Treat it as a credential. The CLI never adds the tax password to this file. Session writes
-replace the file atomically with mode `0600`; reading an older file repairs its permissions
-and those of the session directory (`0700`) on macOS/Linux. Login and CLI errors redact
-password values, including escaped browser call logs.
+## Privacidad y contenido del paquete
 
-Console output, JSON exports and downloaded PDFs contain the requested personal tax data.
-The default PDF names, copied session files, inspection directories, local environment
-variants and package archives are ignored by Git. This does not replace checking any custom
-export path before committing. All committed test fixtures use fictional identifiers and data.
+El archivo de sesión contiene CUIT/CUIL, la selección de persona y el estado
+autenticado del navegador. Tratalo como una credencial. El CLI nunca agrega la
+clave fiscal a ese archivo. Las escrituras reemplazan el archivo de forma atómica
+con permisos `0600`; al leer un archivo antiguo, se corrigen sus permisos y los
+de la carpeta (`0700`) en macOS/Linux. Los errores del ingreso y del CLI ocultan
+las claves, incluso en los registros de Playwright con caracteres escapados.
 
-`npm pack` runs a clean build through `prepack`. The package contains only compiled runtime
-JavaScript and declarations, `package.json`, README and LICENSE. Tests, development tools,
-environment files and source maps are excluded. Check the contents with:
+La salida de consola, el JSON y los PDFs contienen los datos fiscales solicitados.
+Git ignora los PDFs con nombres predeterminados, las copias de sesión, las carpetas
+de inspección, las variantes locales de archivos de entorno y los archivos del
+paquete npm. Revisá las rutas de exportación personalizadas antes de hacer un
+commit. Todas las pruebas versionadas usan datos e identificadores ficticios.
+
+`npm pack` ejecuta una compilación limpia mediante `prepack`. El paquete contiene
+solo JavaScript y declaraciones del código de ejecución, `package.json`, README,
+LICENSE y `docs/mcp.md`. Excluye pruebas, herramientas de desarrollo, archivos de
+entorno y mapas de código fuente. Podés revisar el contenido con:
 
 ```bash
 npm pack --dry-run
 ```
 
-## License
+## Licencia
 
-[ISC](LICENSE).
+[ISC](LICENSE). El archivo conserva el texto original de la licencia e incluye una
+traducción informativa al español.

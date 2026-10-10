@@ -75,7 +75,7 @@ test("supports nested form deductions with explicit fiscal context", () => {
     "--month=1",
     "--amount=100",
   ];
-  expect(() => parseCliOptions(args)).toThrow("--period is required");
+  expect(() => parseCliOptions(args)).toThrow("--period es obligatorio");
   expect(parseCliOptions([...args, "--period=2026", "--person=SAMPLE PERSON"])).toMatchObject({
     kind: "form-deductions-add-item",
     period: 2026,
@@ -90,15 +90,15 @@ test("supports nested form deductions with explicit fiscal context", () => {
     kind: "form-print",
     path: "./draft.pdf",
   });
-  expect(() => parseCliOptions(["form", "print"])).toThrow("--path is required");
+  expect(() => parseCliOptions(["form", "print"])).toThrow("--path es obligatorio");
   expect(() => parseCliOptions(["form", "show", "--period=2026x"])).toThrow(
-    "four-digit fiscal year",
+    "período fiscal de cuatro dígitos",
   );
   expect(() => parseCliOptions(["employees", "list", "--period=2026"])).toThrow(
-    "only supported for form",
+    "solo se admite con los comandos de form",
   );
   expect(() => parseCliOptions(["form", "deductions", "list", "--path=x"])).toThrow(
-    "only supported for form print",
+    "solo se admite con form print",
   );
   expect(() =>
     parseCliOptions([
@@ -109,7 +109,7 @@ test("supports nested form deductions with explicit fiscal context", () => {
       "--date=2025-01-01",
       "--type=gastos-medicos",
     ]),
-  ).toThrow("--date must belong");
+  ).toThrow("--date debe corresponder");
 });
 
 test("rejects the removed deductions alias and directs users to the nested command", () => {
@@ -125,7 +125,7 @@ test("rejects the removed deductions alias and directs users to the nested comma
     ["deductions", "remove-item-receipt", "--period=2026"],
   ]) {
     expect(() => parseCliOptions(args)).toThrow(
-      "Unknown command: deductions. Use arca-siradig form deductions <command>.",
+      "Comando desconocido: deductions. Usá arca-siradig form deductions <comando>.",
     );
   }
 });

@@ -334,7 +334,8 @@ export function parseCliOptions(args: string[]): CliCommand {
 
     if (arg === "--period" || arg.startsWith("--period=")) {
       const value = arg === "--period" ? readFlagValue(args, index++, "--period") : arg.slice(9);
-      if (!/^[12]\d{3}$/.test(value)) throw new Error("--period expects a four-digit fiscal year.");
+      if (!/^[12]\d{3}$/.test(value))
+        throw new Error("--period requiere un período fiscal de cuatro dígitos.");
       period = Number(value);
       continue;
     }
@@ -365,38 +366,39 @@ export function parseCliOptions(args: string[]): CliCommand {
     }
 
     if (arg.startsWith("-")) {
-      throw new Error(`Unknown option: ${arg.split("=", 1)[0]}`);
+      throw new Error(`Opción desconocida: ${arg.split("=", 1)[0]}`);
     }
 
     positionals.push(arg);
   }
 
   if (positionals[0] === "deductions") {
-    throw new Error("Unknown command: deductions. Use arca-siradig form deductions <command>.");
+    throw new Error("Comando desconocido: deductions. Usá arca-siradig form deductions <comando>.");
   }
   if (help || args.length === 0) {
     return { kind: "help", headless, topic: inferHelpTopic(positionals) };
   }
   if (allowWrites && positionals[0] !== "mcp") {
-    throw new Error("--allow-writes is only supported for mcp.");
+    throw new Error("--allow-writes solo se admite con mcp.");
   }
   if (positionals[0] === "mcp") {
-    if (positionals.length !== 1 || interactive) throw new Error("Use arca-siradig mcp [options].");
+    if (positionals.length !== 1 || interactive)
+      throw new Error("Usá arca-siradig mcp [opciones].");
     for (const arg of args) {
       if (arg.startsWith("-") && !["--headless", "--allow-writes"].includes(arg.split("=", 1)[0])) {
-        throw new Error(`Unsupported mcp option: ${arg.split("=", 1)[0]}`);
+        throw new Error(`Opción no admitida para mcp: ${arg.split("=", 1)[0]}`);
       }
     }
     return { kind: "mcp", headless, allowWrites };
   }
   if (accept && !(positionals[0] === "form" && positionals[1] === "submit")) {
-    throw new Error("--aceptar is only supported for form submit.");
+    throw new Error("--aceptar solo se admite con form submit.");
   }
   if (period !== undefined && positionals[0] !== "form") {
-    throw new Error("--period is only supported for form commands.");
+    throw new Error("--period solo se admite con los comandos de form.");
   }
   if (path !== undefined && !(positionals[0] === "form" && positionals[1] === "print")) {
-    throw new Error("--path is only supported for form print.");
+    throw new Error("--path solo se admite con form print.");
   }
   if (positionals[0] === "form" && positionals[1] === "submit" && positionals.length === 2) {
     return { kind: "form-submit", headless, person, period: requirePeriod(period), accept, format };
@@ -496,7 +498,7 @@ export function parseCliOptions(args: string[]): CliCommand {
 
   if (deductionPositionals[0] === "list-receipt-types" && deductionPositionals.length === 1) {
     if (period !== undefined)
-      throw new Error("The receipt type catalog does not have a fiscal period.");
+      throw new Error("El catálogo de tipos de comprobante no tiene período fiscal.");
     return {
       kind: "form-deductions-list-receipt-types",
       headless,
@@ -519,7 +521,7 @@ export function parseCliOptions(args: string[]): CliCommand {
       kind: "form-deductions-show",
       ...formContext,
       headless,
-      deductionId: readRequiredPositional(deductionPositionals[1], "deduction id"),
+      deductionId: readRequiredPositional(deductionPositionals[1], "El ID de la deducción"),
       person,
       format,
     };
@@ -542,7 +544,7 @@ export function parseCliOptions(args: string[]): CliCommand {
     const normalizedDeductionType = readRequiredFlag(deductionType, "--type");
     const isMedicalExpenses = normalizedDeductionType === "gastos-medicos";
     if (date && period !== undefined && Number(date.slice(0, 4)) !== period) {
-      throw new Error("--date must belong to the fiscal year specified by --period.");
+      throw new Error("--date debe corresponder al período fiscal indicado en --period.");
     }
     return {
       kind: "form-deductions-add-item-receipt",
@@ -596,18 +598,19 @@ export function parseCliOptions(args: string[]): CliCommand {
     return { kind: "help", headless, topic: "persons" };
   }
 
-  throw new Error(`Unknown command: ${positionals[0] ?? "(missing)"}`);
+  throw new Error(`Comando desconocido: ${positionals[0] ?? "(sin comando)"}`);
 }
 
 function requirePeriod(period: number | undefined): number {
-  if (period === undefined) throw new Error("--period is required for changes to a form.");
+  if (period === undefined)
+    throw new Error("--period es obligatorio para modificar un formulario.");
   return period;
 }
 
 function readFlagValue(args: string[], index: number, flagName: string): string {
   const value = args[index + 1];
   if (!value || value.startsWith("-")) {
-    throw new Error(`${flagName} expects a value.`);
+    throw new Error(`${flagName} requiere un valor.`);
   }
 
   return value;
@@ -622,7 +625,7 @@ function parseBooleanFlagValue(value: string | undefined, flagName: string): boo
     return false;
   }
 
-  throw new Error(`${flagName} expects "true" or "false".`);
+  throw new Error(`${flagName} admite "true" o "false".`);
 }
 
 function parseOutputFormat(value: string): OutputFormat {
@@ -630,12 +633,12 @@ function parseOutputFormat(value: string): OutputFormat {
     return value;
   }
 
-  throw new Error('--format expects "text" or "json".');
+  throw new Error('--format admite "text" o "json".');
 }
 
 function readRequiredFlag(value: string | undefined, flagName: string): string {
   if (!value || value.trim().length === 0) {
-    throw new Error(`${flagName} is required.`);
+    throw new Error(`${flagName} es obligatorio.`);
   }
 
   return value.trim();
@@ -643,7 +646,7 @@ function readRequiredFlag(value: string | undefined, flagName: string): string {
 
 function readRequiredPositional(value: string | undefined, label: string): string {
   if (!value || value.trim().length === 0) {
-    throw new Error(`${label} is required.`);
+    throw new Error(`${label} es obligatorio.`);
   }
 
   return value.trim();
@@ -653,7 +656,7 @@ function parseRequiredMonth(value: string | undefined, flagName: string): number
   const rawValue = readRequiredFlag(value, flagName);
   const month = Number.parseInt(rawValue, 10);
   if (!/^\d{1,2}$/.test(rawValue) || !Number.isInteger(month) || month < 1 || month > 12) {
-    throw new Error(`${flagName} expects an integer from 1 to 12.`);
+    throw new Error(`${flagName} requiere un número entero del 1 al 12.`);
   }
 
   return month;

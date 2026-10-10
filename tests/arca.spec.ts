@@ -76,7 +76,7 @@ test("parses command CLI options", () => {
     hasExplicitCredentials: true,
   });
   expect(() => parseCliOptions(["login", "-c", "20000000001", "-p", "secret"])).toThrow(
-    "Unknown option: -c",
+    "Opción desconocida: -c",
   );
   expect(parseCliOptions(["login", "--help"])).toEqual({
     kind: "help",
@@ -253,7 +253,7 @@ test("parses command CLI options", () => {
       "--amount=100",
       "--reimbursed-amount=0",
     ]),
-  ).toThrow("--cuit is required.");
+  ).toThrow("--cuit es obligatorio.");
   expect(() =>
     parseCliOptions([
       "form",
@@ -268,7 +268,7 @@ test("parses command CLI options", () => {
       "--number=0000300000222",
       "--amount=100",
     ]),
-  ).toThrow("--reimbursed-amount is required.");
+  ).toThrow("--reimbursed-amount es obligatorio.");
   expect(() =>
     parseCliOptions([
       "form",
@@ -282,7 +282,7 @@ test("parses command CLI options", () => {
       "--amount",
       "1234.12",
     ]),
-  ).toThrow("Unknown option: --deduction-id");
+  ).toThrow("Opción desconocida: --deduction-id");
   expect(() =>
     parseCliOptions([
       "form",
@@ -293,7 +293,7 @@ test("parses command CLI options", () => {
       "--month=3",
       "--amount=1234.12",
     ]),
-  ).toThrow("--type is required.");
+  ).toThrow("--type es obligatorio.");
   expect(() =>
     parseCliOptions([
       "form",
@@ -307,7 +307,7 @@ test("parses command CLI options", () => {
       "--number=0001-00000001",
       "--amount=1234.12",
     ]),
-  ).toThrow("--cuit is required.");
+  ).toThrow("--cuit es obligatorio.");
   expect(
     parseCliOptions([
       "form",
@@ -343,7 +343,7 @@ test("parses command CLI options", () => {
     format: "json",
   });
   expect(() => parseCliOptions(["persons", "list", "--format=xml"])).toThrow(
-    '--format expects "text" or "json".',
+    '--format admite "text" o "json".',
   );
   expect(parseCliOptions(["personal-data", "show"])).toEqual({
     kind: "persons-personal-data-show",
@@ -352,7 +352,7 @@ test("parses command CLI options", () => {
     format: "text",
   });
   expect(() => parseCliOptions(["employees", "show", "--person", "SAMPLE PERSON"])).toThrow(
-    "--employee-cuit is required.",
+    "--employee-cuit es obligatorio.",
   );
   expect(parseCliOptions(["form", "deductions"])).toEqual({
     kind: "help",
@@ -380,7 +380,7 @@ test("parses command CLI options", () => {
     headless: true,
     topic: "employees",
   });
-  expect(() => parseCliOptions(["unknown"])).toThrow("Unknown command: unknown");
+  expect(() => parseCliOptions(["unknown"])).toThrow("Comando desconocido: unknown");
 });
 
 test("stores and reads a session without a password", async () => {
@@ -574,7 +574,7 @@ test("prints deductions as labeled fields", () => {
 
   expect(lines).toEqual([
     "\nDeducciones y desgravaciones",
-    "Type: cuotas-medico-asistenciales",
+    "Tipo: cuotas-medico-asistenciales",
     "ID: 10004",
     "CUIT: 30000000003",
     "Denominación: COBERTURA MEDICA EJEMPLO",

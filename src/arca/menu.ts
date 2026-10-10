@@ -22,7 +22,7 @@ export async function listMenuItems(page: Page): Promise<MenuItem[]> {
 
 export async function selectMenuItem(page: Page, label: string): Promise<void> {
   if (label !== ENABLED_MENU_ITEM) {
-    throw new Error(`The action "${label}" is not implemented yet.`);
+    throw new Error(`La acción "${label}" todavía no está implementada.`);
   }
 
   await navigateByHref(page, page.locator("#btn_datos_personales"));
@@ -43,7 +43,7 @@ export async function returnToMainMenu(page: Page): Promise<void> {
 async function navigateByHref(page: Page, link: Locator): Promise<void> {
   const href = await link.getAttribute("href");
   if (!href || href === "#") {
-    throw new Error("The selected action does not have a navigable href.");
+    throw new Error("La acción seleccionada no tiene un enlace al que se pueda acceder.");
   }
 
   await page.goto(new URL(href, page.url()).href, { waitUntil: "domcontentloaded" });

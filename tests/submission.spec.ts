@@ -64,12 +64,12 @@ test("parses explicit submission acceptance and requires its fiscal year", () =>
       "--format=json",
     ]),
   ).toMatchObject({ kind: "form-submit", person: "0", period: 2026, accept: true, format: "json" });
-  expect(() => parseCliOptions(["form", "submit", "--aceptar"])).toThrow("--period is required");
+  expect(() => parseCliOptions(["form", "submit", "--aceptar"])).toThrow("--period es obligatorio");
   expect(() => parseCliOptions(["form", "summary", "--aceptar"])).toThrow(
-    "only supported for form submit",
+    "solo se admite con form submit",
   );
   expect(() => parseCliOptions(["form", "deductions", "add-item", "--aceptar"])).toThrow(
-    "only supported for form submit",
+    "solo se admite con form submit",
   );
   expect(parseCliOptions(["form", "submit", "--help"])).toMatchObject({
     kind: "help",

@@ -17,7 +17,7 @@ export async function fetchSiradigJson(
   variable: string,
 ): Promise<unknown | undefined> {
   if (!READ_ENDPOINTS.has(endpoint)) {
-    throw new Error("The SiRADIG HTTP endpoint is not an allowed consultation.");
+    throw new Error("La ruta HTTP de SiRADIG no corresponde a una consulta permitida.");
   }
 
   try {

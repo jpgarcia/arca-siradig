@@ -49,14 +49,14 @@ test("MCP is opt-in and leaves bare CLI and interactive commands unchanged", () 
     headless: false,
     allowWrites: true,
   });
-  expect(() => parseCliOptions(["login", "--allow-writes"])).toThrow("only supported for mcp");
+  expect(() => parseCliOptions(["login", "--allow-writes"])).toThrow("solo se admite con mcp");
   expect(() => parseCliOptions(["mcp", "--password=synthetic-secret"])).toThrow(
-    "Unsupported mcp option: --password",
+    "Opción no admitida para mcp: --password",
   );
   expect(() => parseCliOptions(["mcp", "--period=2026"])).toThrow(
-    "Unsupported mcp option: --period",
+    "Opción no admitida para mcp: --period",
   );
-  expect(() => parseCliOptions(["mcp", "extra"])).toThrow("Use arca-siradig mcp");
+  expect(() => parseCliOptions(["mcp", "extra"])).toThrow("Usá arca-siradig mcp");
 });
 
 for (const mode of ["legacy", "auto"] as const) {

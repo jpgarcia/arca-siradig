@@ -17,7 +17,7 @@ export function safeErrorMessage(
     }
   }
   for (const secret of [...variants].sort((a, b) => b.length - a.length)) {
-    message = message.replaceAll(secret, "[REDACTED]");
+    message = message.replaceAll(secret, "[OCULTO]");
   }
   return message;
 }

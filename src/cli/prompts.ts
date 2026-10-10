@@ -1,13 +1,27 @@
+import { styleText } from "node:util";
 import { input, password, select } from "@inquirer/prompts";
 import type { ArcaCredentials, MenuItem, Person } from "../types.js";
 
 const MAIN_MENU_ACTION = "main-menu";
+const SELECTION_THEME = {
+  style: {
+    keysHelpTip: (keys: [key: string, action: string][]) =>
+      keys
+        .map(
+          ([key, action]) =>
+            `${styleText("bold", key)} ${styleText("dim", action === "navigate" ? "moverte" : "elegir")}`,
+        )
+        .join(styleText("dim", " • ")),
+  },
+  i18n: { disabledError: "Esta opción está deshabilitada. Elegí otra." },
+};
 
 export async function promptFormSubmission(): Promise<boolean> {
   try {
     return await select(
       {
         message: "¿Querés generar la presentación y enviarla al empleador?",
+        theme: SELECTION_THEME,
         default: false,
         choices: [
           { name: "Cancelar", value: false },
@@ -40,7 +54,7 @@ export async function promptCredentials(
   const passwordDefault =
     usePasswordDefault && normalizedCuit === normalizedDefaultCuit ? defaults.password : undefined;
   const passwordMessage = passwordDefault
-    ? `Clave fiscal (${maskSecret(passwordDefault)}; presioná enter para usarla):`
+    ? `Clave fiscal (${maskSecret(passwordDefault)}; presioná Enter para usarla):`
     : "Clave fiscal:";
   const passwordValue = await password({
     message: passwordMessage,
@@ -73,7 +87,7 @@ export async function promptMissingCredentials(
     (await promptPassword({
       defaultPassword: passwordDefault,
       defaultLabel: passwordDefault
-        ? `Clave fiscal (${maskSecret(passwordDefault)}; presioná enter para usarla):`
+        ? `Clave fiscal (${maskSecret(passwordDefault)}; presioná Enter para usarla):`
         : "Clave fiscal:",
     }));
 
@@ -82,7 +96,8 @@ export async function promptMissingCredentials(
 
 export async function promptPerson(persons: Person[]): Promise<Person> {
   const person = await select({
-    message: "Seleccione la persona a representar:",
+    message: "Elegí la persona a representar:",
+    theme: SELECTION_THEME,
     choices: persons.map((item) => ({
       name: item.id ? `${item.id}: ${item.name}` : item.name,
       value: item,
@@ -94,7 +109,8 @@ export async function promptPerson(persons: Person[]): Promise<Person> {
 
 export async function promptMenuItem(items: MenuItem[]): Promise<MenuItem> {
   const item = await select({
-    message: "Seleccione una acción:",
+    message: "Elegí una acción:",
+    theme: SELECTION_THEME,
     choices: items.map((menuItem) => ({
       name: menuItem.label,
       value: menuItem,
@@ -109,8 +125,9 @@ export async function promptPersonalDataAction(): Promise<"main-menu"> {
   console.log();
 
   return select({
-    message: "Seleccione una opción:",
-    choices: [{ name: "Menú Principal", value: MAIN_MENU_ACTION }],
+    message: "Elegí una opción:",
+    theme: SELECTION_THEME,
+    choices: [{ name: "Menú principal", value: MAIN_MENU_ACTION }],
   });
 }
 

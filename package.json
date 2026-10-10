@@ -1,7 +1,7 @@
 {
   "name": "arca-siradig",
   "version": "1.1.0",
-  "description": "CLI to inspect, update, print and submit ARCA SiRADIG Form 572 drafts.",
+  "description": "CLI y MCP local para consultar, modificar, imprimir y enviar formularios F572 de ARCA SiRADIG.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jpgarcia/arca-siradig.git"

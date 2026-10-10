@@ -25,7 +25,7 @@ test("all help tables align descriptions across commands and options, with or wi
       let inTable = false;
       const descriptionColumns: number[] = [];
       for (const line of plain.split("\n")) {
-        if (/^ {2}(?:Commands|Options|Global Options):$/.test(line)) inTable = true;
+        if (/^ {2}(?:Comandos|Opciones|Opciones generales):$/.test(line)) inTable = true;
         else if (!line) inTable = false;
         else if (inTable) {
           const row = line.match(/^ {4}(\S.*?) {2,}(\S.*)$/);
@@ -60,21 +60,21 @@ test("help remains readable in narrow terminals and examples retain valid shell 
     }
   }
   expect(renderHelp("deductions", { width: 40 })).toContain(
-    "    --reimbursed-amount <amount>\n      Required",
+    "    --reimbursed-amount <importe>\n      Obligatorio",
   );
 });
 
 test("help documents implemented flags and required arguments accurately", () => {
   const root = renderHelp("root");
-  expect(root).toContain("Start the interactive read-only workflow");
+  expect(root).toContain("Iniciar el modo interactivo de consulta");
   expect(root).toContain("--headless <true|false>");
   expect(root).not.toMatch(/^ {4}deductions\b/m);
-  expect(renderHelp("form")).toContain("deductions <command>");
+  expect(renderHelp("form")).toContain("deductions <comando>");
   for (const topic of topics) {
     expect(renderHelp(topic)).not.toMatch(/--debug|--version|Skip confirmation prompt/);
     expect(renderHelp(topic)).toContain("-h, --help");
   }
-  expect(renderHelp("persons")).toContain("select <id|name>");
+  expect(renderHelp("persons")).toContain("select <id|nombre>");
   expect(renderHelp("persons")).not.toContain("--person");
   expect(renderHelp("employees")).toContain("show --employee-cuit <cuit>");
   expect(renderHelp("form")).toContain("--aceptar");

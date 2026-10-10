@@ -1,94 +1,105 @@
-# SiRADIG HTTP inspection
+# Inspección HTTP de SiRADIG
 
-Inspected the authenticated worker portal through the connected Brave browser on
-2026-10-03. No tax records were saved, submitted, or edited. This browser connection
-exposes DOM inspection, not a network recording API; these findings come from visible
-navigation, form attributes, and inline script contents, not captured HTTP headers or
-request bodies. No real identifiers, cookies, passwords, or response dumps are recorded
-in this document or the fixtures.
+El 2026-10-03 se inspeccionó el portal autenticado de Trabajador mediante el
+navegador Brave conectado. No se guardaron, enviaron ni editaron datos fiscales.
+La conexión permite inspeccionar el DOM, pero no grabar el tráfico de red: estos
+hallazgos provienen de la navegación visible, los atributos de formularios y los
+scripts incluidos en las páginas, no de encabezados ni cuerpos HTTP capturados.
+Este documento y los datos de prueba no contienen identificadores reales,
+cookies, claves fiscales ni volcados de respuestas.
 
-## Observed consultation routes
+## Rutas de consulta observadas
 
-All worker routes below are relative to
+Las rutas de Trabajador son relativas a
 `https://serviciosjava2.afip.gob.ar/radig/jsp/`.
 
-| Screen | Observed route | Data source |
+| Pantalla | Ruta observada | Fuente de datos |
 | --- | --- | --- |
-| Person selection | `menu_sel_empresa.jsp` | Form declares GET to `setearContribuyente.do`, field `idContribuyente` |
-| Worker menu | Menu after person selection | Direct links to consultation screens |
-| Personal data | `verDatosPersonales.do?buscarEmpleado=Y` | Inline `datosForm`, used to populate initially empty controls |
-| Employers | `verMenuEmpleadores.do` | Inline `datosEmpleadoresJSON` |
-| Deductions | `verMenuDeducciones.do` | Inline `datosDeduccionesAgrupadasJSON` |
+| Selección de persona | `menu_sel_empresa.jsp` | El formulario declara GET a `setearContribuyente.do`, con el campo `idContribuyente` |
+| Menú de Trabajador | Menú posterior a la selección de persona | Enlaces directos a consultas |
+| Datos personales | `verDatosPersonales.do?buscarEmpleado=Y` | `datosForm` incluido en la página, que completa controles inicialmente vacíos |
+| Empleadores | `verMenuEmpleadores.do` | `datosEmpleadoresJSON` incluido en la página |
+| Deducciones | `verMenuDeducciones.do` | `datosDeduccionesAgrupadasJSON` incluido en la página |
 
-The employer menu link initially targets `consultarEmpleadores.do`; the resulting page
-is `verMenuEmpleadores.do`. Employer JSON has `titulos`, `clases`, and `filas`;
-each row has `idReg` and five `celdas`. Deduction JSON is an array of groups with
-`titulo`, `tipo`, `linkAltaEdicion`, and `datosTabla`. Each table has `filas` with
-`idReg` and four `celdas`. JavaScript builds the displayed tables from these literals.
+El enlace de empleadores apunta primero a `consultarEmpleadores.do`; la página
+resultante es `verMenuEmpleadores.do`. Su JSON contiene `titulos`, `clases` y
+`filas`; cada fila tiene `idReg` y cinco `celdas`.
 
-## Implemented HTTP path
+El JSON de deducciones es una lista de grupos con `titulo`, `tipo`,
+`linkAltaEdicion` y `datosTabla`. Cada tabla contiene `filas` con `idReg` y cuatro
+`celdas`. JavaScript construye las tablas visibles a partir de esos datos.
 
-Employer and deduction listing first use `page.request.get()` on the observed menu
-endpoint. This shares the browser context's existing authentication without exporting
-its cookies or adding another session store. Responses are parsed in memory, JSON
-literals are decoded with `JSON.parse`, and portal JavaScript is never executed by
-the HTTP reader. The request path does not navigate the browser page.
-The inspected page declares ISO-8859-1 (reported as Windows-1252 by the browser);
-the reader decodes response bytes using the HTTP header or HTML charset declaration
-before parsing JSON, preserving accented text.
+## Consultas HTTP implementadas
 
-Only the two consultation routes are allowed. Redirect following is disabled. Network
-failures, redirects, non-HTML responses, missing JSON, or incompatible schemas fall
-back to existing browser navigation and parsing. Session expiry therefore reaches the
-existing CLI refresh mechanism. Responses are disposed after use.
+Los listados de empleadores y deducciones usan primero `page.request.get()` sobre
+la ruta observada del menú. Comparten la autenticación del contexto del navegador,
+sin exportar cookies ni agregar otro almacenamiento de sesiones.
 
-These HTTP reads are verified with synthetic response fixtures and mocked browser
-pages, including session-expiry fallback. A direct HTTP replay against the authenticated
-Brave session has not been verified: the available browser connection does not expose
-a request client or network recorder.
+Las respuestas se leen en memoria y los datos se decodifican con `JSON.parse`.
+El lector HTTP nunca ejecuta el JavaScript del portal ni cambia la página del
+navegador. La página inspeccionada declara ISO-8859-1, que el navegador informa
+como Windows-1252. El lector decodifica los bytes según el encabezado HTTP o la
+declaración de codificación del HTML antes de leer el JSON, preservando los acentos.
 
-## Remaining browser steps
+Solo se admiten esas dos rutas de consulta y no se siguen redirecciones. Si hay
+un error de red, una redirección, una respuesta que no es HTML, JSON ausente o un
+esquema incompatible, se usa la navegación y extracción existentes del navegador.
+Así, un vencimiento llega al mecanismo de recuperación de sesión del CLI. Las
+respuestas se liberan después de usarlas.
 
-Authentication, person/period selection, personal data, detail screens, and existing
-mutation commands retain their browser flow. The inspected personal-data screen relies
-on script-populated controls, so plain HTML control values are insufficient. Extending
-HTTP support there requires matching `datosForm` to the existing field labels and
-checking output parity. No save/delete/presentation request was replayed.
+Estas consultas se verifican con respuestas ficticias y páginas simuladas,
+incluida la recuperación después de un vencimiento. No se verificó una solicitud
+HTTP directa contra la sesión autenticada de Brave: la conexión disponible no
+ofrece un cliente de solicitudes ni un grabador de tráfico.
 
-## Fiscal form inspection (2026-10-04)
+## Pasos que siguen usando el navegador
 
-Read-only inspection through connected Brave confirmed:
+La autenticación, la selección de persona y período, los datos personales, los
+detalles y las modificaciones conservan sus flujos de navegador. Los datos
+personales dependen de controles completados por scripts; los valores del HTML
+inicial no alcanzan. Agregar consultas HTTP allí requiere relacionar `datosForm`
+con las etiquetas existentes y comprobar que la salida sea equivalente. No se
+reprodujeron solicitudes de guardado, eliminación ni envío.
 
-- The worker entry accepts `codigo=<year>`. A closed/unavailable year returned
-  `El período seleccionado es inválido o inexistente`; a requested year must never be
-  inferred solely from its URL. The visible breadcrumb reports `Período <year>`.
-- The deductions menu links `#btn_vista_previa` to `vistaPreviaFormulario.do`.
-- Preview is HTML with nested `table.tabla_vista_previa`, section `h3` headings,
-  official total/subtotal rows, and `#tabla_datos_personales`.
-- `#btn_imprimir_borrador` navigates to `generarBorradorPDF.do`.
-- `#btn_enviar_empleador` opens a confirmation dialog. The confirmation handler
-  navigates to `generacion_presentacion.jsp`. It was not executed; no live form was sent.
+## Inspección de formularios fiscales (2026-10-04)
 
-Mocked tests cover parsing and PDF download. No live CLI smoke test or presentation
-was run. Historical sent forms remain a separate workflow from current draft preview.
+La inspección en modo de consulta mediante Brave confirmó:
 
-## Submission result inspection (2026-10-04)
+- El ingreso de Trabajador acepta `codigo=<año>`. Un año cerrado o no disponible
+  devolvió `El período seleccionado es inválido o inexistente`. El año no debe
+  inferirse solo de la URL; la ruta de navegación visible informa `Período <año>`.
+- El menú de deducciones enlaza `#btn_vista_previa` con `vistaPreviaFormulario.do`.
+- La vista previa usa HTML con tablas anidadas `table.tabla_vista_previa`, títulos
+  de sección `h3`, filas oficiales de totales y subtotales, y `#tabla_datos_personales`.
+- `#btn_imprimir_borrador` navega a `generarBorradorPDF.do`.
+- `#btn_enviar_empleador` abre una confirmación. Al aceptarla, el controlador navega
+  a `generacion_presentacion.jsp`. No se ejecutó; no se envió un formulario real.
 
-The user ran `form submit` and received `unconfirmed`. Read-only inspection of
-**Consulta de Formularios Enviados** showed that the presentation was registered for
-the requested period. No additional presentation was generated during inspection, and
-the generation endpoint's final response wording remains unobserved.
+Las pruebas con HTML simulado cubren la extracción y descarga del PDF. No se
+hicieron pruebas del CLI ni envíos contra ARCA real. El historial de formularios
+enviados tiene un flujo separado de la vista previa del borrador.
 
-`verFormulariosEnviados.do` contains `#tabla_formularios`. Rendered rows carry
-`data-id-reg` and cells for the public presentation number, description, sending date,
-reading date, and print action. Inline `datosFormulariosJSON` is an array with
-`codigo`, `version`, `fechaEnvio`, nullable `fechaLectura`, and `pluriempleo`. Version 1
-is **Original**; later versions render **Rectificativa <version - 1>**. Sending dates
-have no time component, so today's date alone cannot confirm a new submission.
+## Inspección del resultado de envío (2026-10-04)
 
-The CLI now reads history before generation and, if the acknowledgement is unknown,
-compares it after the single generation attempt. This consultation uses a separate
-authenticated browser page and verifies CUIT and fiscal year; HTTP replay remains
-limited to employer and deduction list endpoints. It confirms only one new ID with the
-next public version, preserving all previous IDs. Missing, unchanged, incompatible, or
-ambiguous histories stay unconfirmed and never trigger a resend.
+El usuario ejecutó `form submit` y recibió `unconfirmed`. La inspección de
+**Consulta de Formularios Enviados** mostró que la presentación estaba registrada
+para el período solicitado. Durante la inspección no se generó otra presentación
+y el texto de respuesta final de la generación sigue sin haberse observado.
+
+`verFormulariosEnviados.do` contiene `#tabla_formularios`. Las filas tienen
+`data-id-reg` y celdas con número público, descripción, fecha de envío, fecha de
+lectura y acción de impresión. El JSON `datosFormulariosJSON` es una lista con
+`codigo`, `version`, `fechaEnvio`, `fechaLectura` opcionalmente nula y `pluriempleo`.
+La versión 1 es **Original**; las siguientes se muestran como
+**Rectificativa <versión - 1>**. Las fechas de envío no incluyen hora: que un
+registro tenga la fecha de hoy no alcanza para confirmar un envío nuevo.
+
+El CLI consulta el historial antes de generar y, si no reconoce la confirmación,
+lo compara después del único intento. Usa una página separada del mismo contexto
+autenticado y verifica CUIT y período fiscal. Las consultas HTTP siguen limitadas
+a los listados de empleadores y deducciones.
+
+El historial confirma el envío solo cuando hay un ID nuevo con la versión pública
+siguiente y se conservan todos los IDs anteriores. Los historiales ausentes, sin
+cambios, incompatibles o ambiguos dejan el resultado sin confirmar y nunca
+provocan un reenvío.
