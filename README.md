@@ -57,8 +57,8 @@ privado; por ejemplo, con `chmod 600 .env` en macOS/Linux.
 
 ## MCP local para clientes de IA
 
-El soporte MCP comienza en la versión **1.1.0**. Si todavía no está publicada en npm,
-usá la configuración del [repositorio local de la guía MCP](docs/mcp.md#repositorio-local).
+El soporte MCP está disponible desde la versión **1.1.0**. Usá el paquete npm
+con `npx` o la configuración del [repositorio local de la guía MCP](docs/mcp.md#repositorio-local).
 
 Instalá Chromium e iniciá sesión **desde tu terminal**, con el mismo usuario del
 sistema que ejecuta el cliente de IA. El chat no necesita tu clave fiscal:

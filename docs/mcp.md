@@ -7,8 +7,8 @@ la ayuda; los comandos existentes conservan opciones, formatos de salida y confi
 
 ## Configuración
 
-El MCP está disponible a partir de la versión 1.1.0. Hasta que se publique en npm,
-usá la configuración del [repositorio local](#repositorio-local).
+El MCP está disponible a partir de la versión 1.1.0. Ejecutalo con el paquete npm
+o usá la configuración del [repositorio local](#repositorio-local).
 
 ```bash
 npx --yes --package=arca-siradig@1.1.0 playwright install chromium
