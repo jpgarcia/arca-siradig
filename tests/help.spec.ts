@@ -7,6 +7,7 @@ import { type HelpCommand, parseCliOptions } from "../src/cli/options.js";
 
 const topics: HelpCommand["topic"][] = [
   "root",
+  "setup",
   "login",
   "logout",
   "persons",
@@ -85,6 +86,7 @@ test("help takes precedence over subcommands and their required arguments", () =
   const commands: Array<{ args: string[]; topic: HelpCommand["topic"] }> = [
     { args: [], topic: "root" },
     { args: ["--interactive"], topic: "root" },
+    { args: ["setup"], topic: "setup" },
     { args: ["login"], topic: "login" },
     { args: ["logout"], topic: "logout" },
     { args: ["mcp"], topic: "mcp" },

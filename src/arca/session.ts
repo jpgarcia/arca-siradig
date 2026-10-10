@@ -1,12 +1,7 @@
-import {
-  type Browser,
-  type BrowserContext,
-  type BrowserContextOptions,
-  chromium,
-  type Page,
-} from "playwright";
+import type { Browser, BrowserContext, BrowserContextOptions, Page } from "playwright";
 import { safeErrorMessage } from "../security/errors.js";
 import type { ArcaCredentials } from "../types.js";
+import { launchChromium } from "./browser.js";
 
 export const ARCA_LOGIN_URL = "https://auth.afip.gob.ar/contribuyente_/login.xhtml";
 export const SIRADIG_LOGIN_URL = `${ARCA_LOGIN_URL}?action=SYSTEM&system=radig`;
@@ -37,7 +32,7 @@ export class ArcaLoginError extends Error {
 export async function createBrowserSession(
   options: BrowserSessionOptions = {},
 ): Promise<BrowserSession> {
-  const browser = await chromium.launch({ headless: options.headless ?? false });
+  const browser = await launchChromium(options.headless ?? false);
   const context = await browser.newContext({ storageState: options.storageState });
   const page = await context.newPage();
 

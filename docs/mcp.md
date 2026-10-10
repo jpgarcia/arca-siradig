@@ -11,11 +11,11 @@ El MCP está disponible a partir de la versión 1.1.0. Ejecutalo con el paquete 
 o usá la configuración del [repositorio local](#repositorio-local).
 
 ```bash
-npx --yes --package=arca-siradig@1.1.0 playwright install chromium
-npx arca-siradig@1.1.0 login
+npx arca-siradig@1.1.1 setup
+npx arca-siradig@1.1.1 login
 ```
 
-Configurá el cliente para ejecutar `npx -y arca-siradig@1.1.0 mcp`. El cliente
+Configurá el cliente para ejecutar `npx -y arca-siradig@1.1.1 mcp`. El cliente
 administra stdin y stdout; si ejecutás el servidor solo en una terminal, queda
 esperando mensajes MCP. Usá el mismo usuario del sistema para iniciar sesión y
 para ejecutar el MCP: ambos usan `~/.arca-siradig/session.json`. La configuración
@@ -34,7 +34,7 @@ Agregá esta entrada al objeto `mcpServers` existente:
   "mcpServers": {
     "arca-siradig": {
       "command": "npx",
-      "args": ["-y", "arca-siradig@1.1.0", "mcp"]
+      "args": ["-y", "arca-siradig@1.1.1", "mcp"]
     }
   }
 }
@@ -50,7 +50,7 @@ para configurar el comando y los argumentos. Consultá la
 ### Claude Code
 
 ```bash
-claude mcp add --transport stdio --scope user arca-siradig -- npx -y arca-siradig@1.1.0 mcp
+claude mcp add --transport stdio --scope user arca-siradig -- npx -y arca-siradig@1.1.1 mcp
 claude mcp list
 ```
 
@@ -60,7 +60,7 @@ Consultá la [documentación MCP de Claude Code](https://code.claude.com/docs/en
 ### Codex
 
 ```bash
-codex mcp add arca-siradig -- npx -y arca-siradig@1.1.0 mcp
+codex mcp add arca-siradig -- npx -y arca-siradig@1.1.1 mcp
 codex mcp list
 ```
 
@@ -69,7 +69,7 @@ La configuración equivalente en `~/.codex/config.toml` es:
 ```toml
 [mcp_servers.arca-siradig]
 command = "npx"
-args = ["-y", "arca-siradig@1.1.0", "mcp"]
+args = ["-y", "arca-siradig@1.1.1", "mcp"]
 startup_timeout_sec = 30
 tool_timeout_sec = 120
 ```
@@ -83,8 +83,8 @@ ChatGPT. Consultá la [documentación MCP de Codex](https://learn.chatgpt.com/do
 
 ```bash
 npm ci
-npx playwright install chromium
 npm run build
+node dist/src/cli/index.js setup
 node dist/src/cli/index.js login
 ```
 
@@ -145,7 +145,7 @@ Agregá `--allow-writes` a los argumentos de inicio para habilitar tres herramie
 adicionales:
 
 ```json
-"args": ["-y", "arca-siradig@1.1.0", "mcp", "--allow-writes"]
+"args": ["-y", "arca-siradig@1.1.1", "mcp", "--allow-writes"]
 ```
 
 | Herramienta | Campos obligatorios |
@@ -172,7 +172,7 @@ cambio podría haberse guardado.
 El envío al empleador es una acción separada del CLI, con confirmación explícita:
 
 ```bash
-npx arca-siradig@1.1.0 form submit --period 2026
+npx arca-siradig@1.1.1 form submit --period 2026
 ```
 
 Esta versión no tiene una herramienta MCP de envío. El MCP no abre preguntas del
@@ -210,8 +210,9 @@ por diagnósticos seguros, sin devolver encabezados, cookies ni capturas del por
 - `OPERATION_FAILED`: verificá persona y año con `arca-siradig form show --period <año>`.
   Para ver qué pasa en el navegador, agregá `--headless false` al comando del CLI.
 - `DRAFT_CHANGE_UNCONFIRMED`: revisá las deducciones antes de intentar otro cambio.
-- Falta el ejecutable del navegador: instalá Chromium con la misma versión del
-  paquete que figura en la sección de configuración.
+- `BROWSER_REQUIRED`: ejecutá `arca-siradig setup` desde la terminal.
+  El MCP no instala dependencias ni abre preguntas. `login` ofrece instalar el
+  navegador cuando falta y usás una terminal interactiva.
 - No se encuentra `npx` o `node`: las aplicaciones de escritorio pueden no recibir
   el entorno del gestor de versiones de Node de tu terminal. Usá rutas absolutas
   o la configuración del repositorio local.

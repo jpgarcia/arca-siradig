@@ -313,3 +313,34 @@ Los identificadores del código se mantienen en inglés. Las etiquetas de ARCA
 conservan el español cuando forman parte del contenido visible, los selectores
 o el vocabulario del portal. La documentación y los mensajes del proyecto se
 escriben en español de Argentina.
+
+## Landing pública
+
+`site/` contiene una landing estática en español con capacidades, límites y una
+configuración inicial del MCP local. No ejecuta el CLI ni recibe datos fiscales.
+Sus assets relativos permiten alojarla en el subdirectorio de GitHub Pages.
+`npm run site:preview` sirve únicamente tres archivos permitidos de esa carpeta
+en la interfaz local, sin exponer sesiones ni otros archivos del repositorio.
+`.github/workflows/pages.yml` publica solo la carpeta `site/` mediante GitHub
+Actions en cada push a main que cambia la landing o el workflow. La vista previa
+local permanece separada del despliegue.
+La landing no forma parte de la lista de archivos del paquete npm.
+
+## Instalación del navegador
+
+`src/arca/browser.ts` concentra la comprobación e instalación de Chromium.
+La comprobación inicia y cierra el navegador del modo solicitado, sin navegar,
+para detectar también la ausencia de headless shell. Solo la falta del ejecutable
+se convierte en `BrowserDependencyError`; otros fallos conservan su diagnóstico.
+`createBrowserSession` usa el mismo lanzamiento y el MCP devuelve `BROWSER_REQUIRED`
+con instrucciones para ejecutar setup, sin preguntas ni instalaciones automáticas.
+
+`setup` ejecuta el CLI de la dependencia Playwright instalada mediante Node,
+sin shell, con una identidad propia y sin pasar variables ARCA_CUIT/ARCA_PASSWORD.
+Así instala la versión compatible y evita el aviso genérico de instalación por
+npx. Playwright conserva su caché y la salida de progreso y errores.
+`src/cli/setup.ts` coordina el preflight de login antes de consultar sesiones o
+pedir credenciales. Las preguntas viven en `src/cli/prompts.ts`; requieren stdin
+y stderr interactivos. Rechazar o interrumpir cancela el login. Sin terminal,
+el error indica setup y no inicia descargas. Estas verificaciones nunca navegan
+al portal ARCA y sus pruebas usan instaladores simulados.

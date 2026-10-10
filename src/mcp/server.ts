@@ -1,5 +1,6 @@
 import { type CallToolResult, McpServer, type ToolCallback } from "@modelcontextprotocol/server";
 import { z } from "zod/v4";
+import { BrowserDependencyError } from "../arca/browser.js";
 import { listReceiptTypes } from "../arca/receipt-types.js";
 import { SessionError } from "../services/session.js";
 import { SiradigService } from "../services/siradig.js";
@@ -81,7 +82,7 @@ export function createMcpServer(
       } catch (error) {
         // Raw browser/request errors can include cookies, headers, or portal HTML.
         const output =
-          error instanceof SessionError
+          error instanceof SessionError || error instanceof BrowserDependencyError
             ? { code: error.code, message: error.message }
             : {
                 code: kind === "write" ? "DRAFT_CHANGE_UNCONFIRMED" : "OPERATION_FAILED",

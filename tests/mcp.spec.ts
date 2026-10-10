@@ -6,6 +6,7 @@ import { Client } from "@modelcontextprotocol/client";
 import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
 import { InMemoryTransport } from "@modelcontextprotocol/server";
 import { expect, test } from "@playwright/test";
+import { BrowserDependencyError } from "../src/arca/browser.js";
 import type { BrowserSession } from "../src/arca/session.js";
 import { parseCliOptions } from "../src/cli/options.js";
 import { createMcpServer } from "../src/mcp/server.js";
@@ -328,4 +329,32 @@ test("shutdown closes the active browser once and rejects queued operations", as
   expect((await outcomes).map((result) => result.status)).toEqual(["rejected", "rejected"]);
   expect([launches, contextCloses, browserCloses]).toEqual([1, 1, 1]);
   await expect(service.sessionStatus()).rejects.toThrow("cerrando");
+});
+
+test("missing Chromium returns setup instructions over MCP without prompting or retrying", async () => {
+  let launches = 0;
+  const service = new SiradigService({
+    store: memoryStore({
+      cuit: "20000000001",
+      createdAt: "2026-01-01T00:00:00Z",
+      storageState: { cookies: [], origins: [] },
+    }),
+    createBrowser: async () => {
+      launches += 1;
+      throw new BrowserDependencyError();
+    },
+  });
+  const connection = await connect(service);
+  try {
+    const result = await connection.client.callTool({
+      name: "siradig_persons_list",
+      arguments: {},
+    });
+    expect(result.isError).toBe(true);
+    expect(result.structuredContent).toMatchObject({ code: "BROWSER_REQUIRED" });
+    expect(JSON.stringify(result)).toContain("arca-siradig setup");
+    expect(launches).toBe(1);
+  } finally {
+    await connection.close();
+  }
 });

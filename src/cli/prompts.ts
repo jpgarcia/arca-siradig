@@ -148,3 +148,24 @@ async function promptPassword(options: {
 
   return passwordValue.length > 0 ? passwordValue : (options.defaultPassword ?? "");
 }
+
+export async function promptBrowserInstallation(): Promise<boolean> {
+  try {
+    return await select(
+      {
+        message: "¿Querés descargar e instalar Chromium ahora?",
+        theme: SELECTION_THEME,
+        default: false,
+        choices: [
+          { name: "Instalar Chromium y continuar con el login", value: true },
+          { name: "Cancelar", value: false },
+        ],
+      },
+      { output: process.stderr },
+    );
+  } catch (error) {
+    if (error instanceof Error && ["ExitPromptError", "AbortPromptError"].includes(error.name))
+      return false;
+    throw error;
+  }
+}

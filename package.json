@@ -1,12 +1,12 @@
 {
   "name": "arca-siradig",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "CLI y MCP local para consultar, modificar, imprimir y enviar formularios F572 de ARCA SiRADIG.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jpgarcia/arca-siradig.git"
   },
-  "homepage": "https://github.com/jpgarcia/arca-siradig#readme",
+  "homepage": "https://jpgarcia.github.io/arca-siradig/",
   "bugs": {
     "url": "https://github.com/jpgarcia/arca-siradig/issues"
   },
@@ -34,7 +34,8 @@
     "prepack": "npm run build",
     "check": "biome check .",
     "format": "biome format --write .",
-    "test": "playwright test"
+    "test": "playwright test",
+    "site:preview": "node scripts/preview-site.mjs"
   },
   "keywords": [
     "arca",

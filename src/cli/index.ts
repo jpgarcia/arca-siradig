@@ -74,6 +74,7 @@ import {
   printReceiptTypes,
   renderFormSummary,
 } from "./render.js";
+import { ensureLoginBrowser, runSetup } from "./setup.js";
 import {
   toStructuredDeductionDetail,
   toStructuredEmployeeData,
@@ -102,6 +103,9 @@ async function main(): Promise<void> {
       startMcpServer(command);
       return;
     }
+    case "setup":
+      await runSetup();
+      return;
     case "login":
       await runLogin(command, store);
       return;
@@ -156,6 +160,7 @@ async function runLogin(
   command: Extract<CliCommand, { kind: "login" }>,
   store: SessionStore,
 ): Promise<void> {
+  await ensureLoginBrowser(command.headless);
   if (!command.hasExplicitCredentials) {
     const currentSession = await store.read();
     if (currentSession && (await canListPersons(command.headless, currentSession.storageState))) {

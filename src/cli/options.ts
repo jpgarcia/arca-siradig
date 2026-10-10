@@ -4,6 +4,7 @@ export type HelpCommand = {
   kind: "help";
   headless: boolean;
   topic:
+    | "setup"
     | "root"
     | "login"
     | "logout"
@@ -146,6 +147,7 @@ export type FormSubmitCommand = {
 };
 
 export type CliCommand =
+  | { kind: "setup" }
   | McpCommand
   | FormSubmitCommand
   | FormPreviewCommand
@@ -377,6 +379,11 @@ export function parseCliOptions(args: string[]): CliCommand {
   }
   if (help || args.length === 0) {
     return { kind: "help", headless, topic: inferHelpTopic(positionals) };
+  }
+  if (positionals[0] === "setup") {
+    if (args.length !== 1)
+      throw new Error("Usá arca-siradig setup sin opciones ni argumentos adicionales.");
+    return { kind: "setup" };
   }
   if (allowWrites && positionals[0] !== "mcp") {
     throw new Error("--allow-writes solo se admite con mcp.");
@@ -679,6 +686,7 @@ function inferHelpTopic(positionals: string[]): HelpCommand["topic"] {
     return "login";
   }
 
+  if (positionals[0] === "setup") return "setup";
   if (positionals[0] === "mcp") return "mcp";
 
   if (positionals[0] === "form") return positionals[1] === "deductions" ? "deductions" : "form";

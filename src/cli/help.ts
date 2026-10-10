@@ -31,6 +31,7 @@ const HELP_PAGES: Record<HelpCommand["topic"], HelpPage> = {
     usage: "arca-siradig [opciones] <comando>",
     description: "Gestioná sesiones, personas y formularios fiscales de ARCA SiRADIG.",
     commands: [
+      ["setup", "Instalar Chromium, el navegador que necesita el CLI"],
       ["login", "Iniciar sesión en ARCA y guardarla"],
       ["logout", "Eliminar la sesión guardada"],
       ["persons <comando>", "Listar personas o seleccionar una"],
@@ -48,6 +49,14 @@ const HELP_PAGES: Record<HelpCommand["topic"], HelpPage> = {
         args: ["form", "summary", "--period=2026"],
       },
     ],
+  },
+  setup: {
+    usage: "arca-siradig setup",
+    description: "Descargá Chromium con la versión de Playwright incluida en el paquete.",
+    notes: [
+      "No inicia sesión ni se conecta a ARCA. Si ya está instalado, reutiliza la caché de Playwright.",
+    ],
+    examples: [{ description: "Preparar el navegador", args: ["setup"] }],
   },
   mcp: {
     usage: "arca-siradig mcp [opciones]",
@@ -77,6 +86,7 @@ const HELP_PAGES: Record<HelpCommand["topic"], HelpPage> = {
       ["--password <clave>", "Clave fiscal de ARCA"],
     ],
     notes: [
+      "Si falta Chromium, el CLI te ofrece instalarlo antes de pedir credenciales. Sin terminal interactiva, ejecutá arca-siradig setup primero.",
       "Ingresá la clave fiscal cuando el CLI te la pida. Si usás --password, puede quedar en el historial de la terminal y en los argumentos del proceso.",
     ],
     examples: [

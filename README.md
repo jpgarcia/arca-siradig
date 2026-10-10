@@ -18,13 +18,17 @@ Usá Node.js 20.17 o superior de la rama 20.x, 22.13 o superior de la rama 22.x,
 npx arca-siradig --help
 ```
 
-Antes de iniciar sesión por primera vez, instalá la versión de Chromium que requiere
-la dependencia Playwright del CLI. El navegador queda en caché para los próximos comandos:
+Ejecutá `arca-siradig setup` para instalar Chromium. También
+podés ejecutar `login` directamente: si falta el navegador y usás una terminal
+interactiva, te ofrece instalarlo antes de pedir credenciales. Sin terminal,
+indica el comando de instalación y termina sin descargar automáticamente.
+
+Usá el paquete publicado con `npx`:
 
 ```bash
-npx --yes --package=arca-siradig playwright install chromium
-npx arca-siradig login
-npx arca-siradig form summary --period 2026
+npx arca-siradig@1.1.1 setup
+npx arca-siradig@1.1.1 login
+npx arca-siradig@1.1.1 form summary --period 2026
 ```
 
 También podés instalar el comando de forma global:
@@ -38,8 +42,8 @@ Para trabajar desde el repositorio local:
 
 ```bash
 npm ci
-npx playwright install chromium
 npm run build
+node dist/src/cli/index.js setup
 ```
 
 Si querés, creá un archivo `.env` local:
@@ -64,8 +68,8 @@ Instalá Chromium e iniciá sesión **desde tu terminal**, con el mismo usuario 
 sistema que ejecuta el cliente de IA. El chat no necesita tu clave fiscal:
 
 ```bash
-npx --yes --package=arca-siradig@1.1.0 playwright install chromium
-npx arca-siradig@1.1.0 login
+npx arca-siradig@1.1.1 setup
+npx arca-siradig@1.1.1 login
 ```
 
 Para Claude Desktop y otros clientes que aceptan un objeto JSON `mcpServers`, agregá
@@ -76,7 +80,7 @@ esta entrada a su configuración MCP y reiniciá el cliente:
   "mcpServers": {
     "arca-siradig": {
       "command": "npx",
-      "args": ["-y", "arca-siradig@1.1.0", "mcp"]
+      "args": ["-y", "arca-siradig@1.1.1", "mcp"]
     }
   }
 }
@@ -85,13 +89,13 @@ esta entrada a su configuración MCP y reiniciá el cliente:
 Para Claude Code:
 
 ```bash
-claude mcp add --transport stdio --scope user arca-siradig -- npx -y arca-siradig@1.1.0 mcp
+claude mcp add --transport stdio --scope user arca-siradig -- npx -y arca-siradig@1.1.1 mcp
 ```
 
 Para Codex:
 
 ```bash
-codex mcp add arca-siradig -- npx -y arca-siradig@1.1.0 mcp
+codex mcp add arca-siradig -- npx -y arca-siradig@1.1.1 mcp
 ```
 
 El servidor permite consultar datos, seleccionar una persona, obtener el resumen
@@ -406,3 +410,11 @@ npm pack --dry-run
 
 [ISC](LICENSE). El archivo conserva el texto original de la licencia e incluye una
 traducción informativa al español.
+
+## Landing y vista previa local
+
+La guía visual para empezar con IA está en `site/`. Ejecutá `npm run site:preview`
+y abrí http://localhost:4173. Consultá [la guía de la landing](site/README.md)
+para conocer el despliegue en GitHub Pages.
+
+La página pública está en https://jpgarcia.github.io/arca-siradig/.
